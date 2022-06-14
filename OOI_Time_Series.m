@@ -1,37 +1,46 @@
 %%% Loading data
-temp_7m = table2struct(readtable('OOI_CE_OISM_NSIF_Temperature.csv'));
-salt_7m = table2struct(readtable('OOI_CE_OISM_NSIF_Salinity.csv'));
-temp_25m = table2struct(readtable('OOI_CE_OISM_SMFN_Temperature.csv'));
-salt_25m = table2struct(readtable('OOI_CE_OISM_SMFN_Salinity.csv'));
+oism.temp7m = readtable('OOI_CE_OISM_NSIF_Temperature.csv');
+oism.salt7m = readtable('OOI_CE_OISM_NSIF_Salinity.csv');
+oism.temp25m = readtable('OOI_CE_OISM_SMFN_Temperature.csv');
+oism.salt25m = readtable('OOI_CE_OISM_SMFN_Salinity.csv');
 
-%%% Filtering to data with the highest quality flag
-temp_7m = temp_7m(vertcat(temp_7m.sea_water_temperature_qc_agg) == 1, :);
-salt_7m = salt_7m(vertcat(salt_7m.sea_water_practical_salinity_qc_agg) == 1, :);
-temp_25m = temp_25m(vertcat(temp_25m.sea_water_temperature_qc_agg) == 1, :);
-salt_25m = salt_25m(vertcat(salt_25m.sea_water_practical_salinity_qc_agg) == 1, :);
+%%% Filtering Data
+oism.temp7m = oism.temp7m(oism.temp7m.sea_water_temperature_qc_agg == 1, :);
+oism.salt7m = oism.salt7m(oism.salt7m.sea_water_practical_salinity_qc_agg == 1, :);
+oism.temp25m = oism.temp25m(oism.temp25m.sea_water_temperature_qc_agg == 1, :);
+oism.salt25m = oism.salt25m(oism.salt25m.sea_water_practical_salinity_qc_agg == 1, :);
+
+%%% Creating a consistently spaced time grid
+time_grid = (datetime(2014,04,01):minutes(30):datetime(2022,06,01))';
 
 %%% Converting time string to datetime
-temp_7m_datetime = datetime(vertcat(temp_7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
-salt_7m_datetime = datetime(vertcat(salt_7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
-temp_25m_datetime = datetime(vertcat(temp_25m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
-salt_25m_datetime = datetime(vertcat(salt_25m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
+oism.temp7m.datetime = datetime(vertcat(oism.temp7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
+oism.salt7m.datetime = datetime(vertcat(oism.salt7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
+oism.temp25m.datetime = datetime(vertcat(oism.temp25m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
+oism.salt25m.datetime = datetime(vertcat(oism.salt25m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 
-for i = 1:length(temp_7m_datetime)
-    temp_7m(i).datetime = temp_7m_datetime(i);
-end
+%%% Interpolating onto time grid
+oism_interp.time = time_grid;
+oism_interp.temp7m = interp1(datenum(oism.temp7m.datetime), oism.temp7m.sea_water_temperature, datenum(time_grid));
+oism_interp.salt7m = interp1(datenum(oism.salt7m.datetime), oism.salt7m.sea_water_practical_salinity, datenum(time_grid));
+oism_interp.temp25m = interp1(datenum(oism.temp25m.datetime), oism.temp25m.sea_water_temperature, datenum(time_grid));
+oism_interp.salt25m = interp1(datenum(oism.salt25m.datetime), oism.salt25m.sea_water_practical_salinity, datenum(time_grid));
 
-for i = 1:length(salt_7m_datetime)
-    salt_7m(i).datetime = salt_7m_datetime(i);
+%%% Removing 
+for i = 1:length(oism_interp.time)
+    if min(abs(datenum(oism_interp.time(i))-datenum(oism.temp7m.datetime))) > datenum(hours(1))
+        oism_interp.temp7m(i) = NaN; 
+    end
+    if min(abs(datenum(oism_interp.time(i))-datenum(oism.salt7m.datetime))) > datenum(hours(1))
+        oism_interp.salt7m(i) = NaN; 
+    end
+    if min(abs(datenum(oism_interp.time(i))-datenum(oism.temp25m.datetime))) > datenum(hours(1))
+        oism_interp.temp25m(i) = NaN; 
+    end
+    if min(abs(datenum(oism_interp.time(i))-datenum(oism.salt25m.datetime))) > datenum(hours(1))
+        oism_interp.salt25m(i) = NaN; 
+    end
 end
-for i = 1:length(temp_25m_datetime)
-    temp_25m(i).datetime = temp_25m_datetime(i);
-end
-
-for i = 1:length(salt_25m_datetime)
-    salt_25m(i).datetime = salt_25m_datetime(i);
-end
-
-clear salt_7m_datetime temp_7m_datetime salt_25m_datetime temp_25m_datetime i 
 
 %%
 %%% Plotting temp/salt time series
@@ -39,20 +48,22 @@ figure()
 sgtitle('Oregon Inshoor Surface Mooring - Near Surface Instrument Frame (7 m)');
 
 subplot(211)
-plot(vertcat(temp_7m.datetime), vertcat(temp_7m.sea_water_temperature))
+plot(oism_interp.time, oism_interp.temp7m)
 ylabel('Temperature (degC)');
 
 subplot(212)
-plot(vertcat(salt_7m.datetime), vertcat(salt_7m.sea_water_practical_salinity));
+plot(oism_interp.time, oism_interp.salt7m)
 ylabel('Salinity (g/kg)');
 
 figure()
 sgtitle('Oregon Inshoor Surface Mooring - Seafloor Multi-Function Node (25 m)');
 
 subplot(211)
-plot(vertcat(temp_25m.datetime), vertcat(temp_25m.sea_water_temperature))
+plot(oism_interp.time, oism_interp.temp25m);
 ylabel('Temperature (degC)');
 
 subplot(212)
-plot(vertcat(salt_25m.datetime), vertcat(salt_25m.sea_water_practical_salinity));
+plot(oism_interp.time, oism_interp.salt25m);
 ylabel('Salinity (g/kg)');
+
+
