@@ -1,4 +1,4 @@
-=%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Settings %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -99,20 +99,24 @@ oosm.salt7m = renamevars(oosm.salt7m,'sea_water_practical_salinity','salt');
 %%%%%%%%%%%%%% Loading and pre-processing meterological data %%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%%%%%%%%%%%%%%%%%
+%%% Shelf Data %%%
+%%%%%%%%%%%%%%%%%%
+
 %%% Loading meterological data from different years
-metero_unfmt.data2016 = readtable('2016meterologicaldata.txt');
-metero_unfmt.data2017 = readtable('2017meterologicaldata.txt');
-metero_unfmt.data2018 = readtable('2018meterologicaldata.txt');
-metero_unfmt.data2019 = readtable('2019meterologicaldata.txt');
-metero_unfmt.data2020 = readtable('2020meterologicaldata.txt');
-metero_unfmt.data2021 = readtable('2021meterologicaldata.txt');
+metero_unfmt.data2016 = readtable('Shelf Wind Data/2016meterologicaldata.txt');
+metero_unfmt.data2017 = readtable('Shelf Wind Data/2017meterologicaldata.txt');
+metero_unfmt.data2018 = readtable('Shelf Wind Data/2018meterologicaldata.txt');
+metero_unfmt.data2019 = readtable('Shelf Wind Data/2019meterologicaldata.txt');
+metero_unfmt.data2020 = readtable('Shelf Wind Data/2020meterologicaldata.txt');
+metero_unfmt.data2021 = readtable('Shelf Wind Data/2021meterologicaldata.txt');
 
 %%% Extracting wind direction data
-metero.wind_dir = table2array(vertcat(metero_unfmt.data2016(:,6),metero_unfmt.data2017(:,6),metero_unfmt.data2018(:,6),...
+metero_shelf.wind_dir = table2array(vertcat(metero_unfmt.data2016(:,6),metero_unfmt.data2017(:,6),metero_unfmt.data2018(:,6),...
     metero_unfmt.data2019(:,6), metero_unfmt.data2020(:,6), metero_unfmt.data2021(:,6)));
 
 %%% Extracting wind speed data
-metero.wind_spd = table2array(vertcat(metero_unfmt.data2016(:,7),metero_unfmt.data2017(:,7),metero_unfmt.data2018(:,7),...
+metero_shelf.wind_spd = table2array(vertcat(metero_unfmt.data2016(:,7),metero_unfmt.data2017(:,7),metero_unfmt.data2018(:,7),...
     metero_unfmt.data2019(:,7), metero_unfmt.data2020(:,7), metero_unfmt.data2021(:,7)));
 
 %%% Extracting time of measurement data
@@ -134,9 +138,64 @@ mnts = table2array(vertcat(metero_unfmt.data2016(:,5),metero_unfmt.data2017(:,5)
 snds = zeros(size(yrs)); %%% Setting seconds to 0
 
 %%% Converting time of measurement data to datetime
-metero.datetime = datetime(yrs,mths,days,hrs,mnts, snds);
+metero_shelf.datetime = datetime(yrs,mths,days,hrs,mnts, snds);
 
-clear yrs mths days hrs mnts snds metero_unfmt
+%%% Removing missing data
+bad_data = find(metero_shelf.wind_spd > 90 | metero_shelf.wind_dir > 900);
+metero_shelf.wind_dir(bad_data) = [];
+metero_shelf.wind_spd(bad_data) = [];
+metero_shelf.datetime(bad_data) = [];
+
+clear yrs mths days hrs mnts snds metero_unfmt bad_data
+
+%%%%%%%%%%%%%%%%%%%%%
+%%% Offshore Data %%%
+%%%%%%%%%%%%%%%%%%%%%
+
+%%% Loading meterological data from different years
+metero_unfmt.data2016 = readtable('Offshore Wind Data/2016meterologicaldata.txt');
+metero_unfmt.data2017 = readtable('Offshore Wind Data/2017meterologicaldata.txt');
+metero_unfmt.data2018 = readtable('Offshore Wind Data/2018meterologicaldata.txt');
+metero_unfmt.data2019 = readtable('Offshore Wind Data/2019meterologicaldata.txt');
+metero_unfmt.data2020 = readtable('Offshore Wind Data/2020meterologicaldata.txt');
+metero_unfmt.data2021 = readtable('Offshore Wind Data/2021meterologicaldata.txt');
+
+%%% Extracting wind direction data
+metero_offshore.wind_dir = table2array(vertcat(metero_unfmt.data2016(:,6),metero_unfmt.data2017(:,6),metero_unfmt.data2018(:,6),...
+    metero_unfmt.data2019(:,6), metero_unfmt.data2020(:,6), metero_unfmt.data2021(:,6)));
+
+%%% Extracting wind speed data
+metero_offshore.wind_spd = table2array(vertcat(metero_unfmt.data2016(:,7),metero_unfmt.data2017(:,7),metero_unfmt.data2018(:,7),...
+    metero_unfmt.data2019(:,7), metero_unfmt.data2020(:,7), metero_unfmt.data2021(:,7)));
+
+%%% Extracting time of measurement data
+yrs = table2array(vertcat(metero_unfmt.data2016(:,1),metero_unfmt.data2017(:,1),metero_unfmt.data2018(:,1),...
+    metero_unfmt.data2019(:,1), metero_unfmt.data2020(:,1), metero_unfmt.data2021(:,1)));
+
+mths = table2array(vertcat(metero_unfmt.data2016(:,2),metero_unfmt.data2017(:,2),metero_unfmt.data2018(:,2),...
+    metero_unfmt.data2019(:,2), metero_unfmt.data2020(:,2), metero_unfmt.data2021(:,2)));
+
+days = table2array(vertcat(metero_unfmt.data2016(:,3),metero_unfmt.data2017(:,3),metero_unfmt.data2018(:,3),...
+    metero_unfmt.data2019(:,3), metero_unfmt.data2020(:,3), metero_unfmt.data2021(:,3)));
+
+hrs = table2array(vertcat(metero_unfmt.data2016(:,4),metero_unfmt.data2017(:,4),metero_unfmt.data2018(:,4),...
+    metero_unfmt.data2019(:,4), metero_unfmt.data2020(:,4), metero_unfmt.data2021(:,4)));
+
+mnts = table2array(vertcat(metero_unfmt.data2016(:,5),metero_unfmt.data2017(:,5),metero_unfmt.data2018(:,5),...
+    metero_unfmt.data2019(:,5), metero_unfmt.data2020(:,5), metero_unfmt.data2021(:,5)));
+
+snds = zeros(size(yrs)); %%% Setting seconds to 0
+
+%%% Converting time of measurement data to datetime
+metero_offshore.datetime = datetime(yrs,mths,days,hrs,mnts, snds);
+
+%%% Removing missing data
+bad_data = find(metero_offshore.wind_spd > 90 | metero_offshore.wind_dir > 900);
+metero_offshore.wind_dir(bad_data) = [];
+metero_offshore.wind_spd(bad_data) = [];
+metero_offshore.datetime(bad_data) = [];
+
+clear yrs mths days hrs mnts snds metero_unfmt bad_data
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%% Loading and pre-processing river discharge data %%%%%%%%%%%%%%%
@@ -187,10 +246,15 @@ oosm.salt1m_interp = interp1gap(datenum(oosm.salt1m.datetime), oosm.salt1m.salt,
 oosm.temp7m_interp = interp1gap(datenum(oosm.temp7m.datetime), oosm.temp7m.temp, datenum(time_grid), datenum(max_gap));
 oosm.salt7m_interp = interp1gap(datenum(oosm.salt7m.datetime), oosm.salt7m.salt, datenum(time_grid), datenum(max_gap));
 
-%%% Interpolating wind data onto time grid
-metero.time_interp = time_grid;
-metero.wind_dir_interp = interp1gap(datenum(metero.datetime), metero.wind_dir, datenum(time_grid), datenum(max_gap));
-metero.wind_spd_interp = interp1gap(datenum(metero.datetime), metero.wind_spd, datenum(time_grid), datenum(max_gap));
+%%% Interpolating shelf wind data onto time grid
+metero_shelf.time_interp = time_grid;
+metero_shelf.wind_dir_interp = interp1gap(datenum(metero_shelf.datetime), metero_shelf.wind_dir, datenum(time_grid), datenum(max_gap));
+metero_shelf.wind_spd_interp = interp1gap(datenum(metero_shelf.datetime), metero_shelf.wind_spd, datenum(time_grid), datenum(max_gap));
+
+%%% Interpolating offshore wind data onto time grid
+metero_offshore.time_interp = time_grid;
+metero_offshore.wind_dir_interp = interp1gap(datenum(metero_offshore.datetime), metero_offshore.wind_dir, datenum(time_grid), datenum(max_gap));
+metero_offshore.wind_spd_interp = interp1gap(datenum(metero_offshore.datetime), metero_offshore.wind_spd, datenum(time_grid), datenum(max_gap));
 
 %%% Interpolating river discharge data
 riverflow.time_interp = time_grid;
@@ -206,31 +270,36 @@ runmean_time_step = datenum(hours(1));
 
 %%% Creating running mean for the OISM data on time grid
 oism.time_runmean = time_grid;
-oism.temp1m_runmean = runmean(time_grid, runmean_time_step, oism.temp1m.datetime, oism.temp1m);
-oism.salt1m_runmean = runmean(time_grid, runmean_time_step, oism.salt1m.datetime, oism.salt1m.sea_water_practical_salinity);
+oism.temp1m_runmean = runmean(time_grid, runmean_time_step, oism.temp1m.datetime, oism.temp1m.temp);
+oism.salt1m_runmean = runmean(time_grid, runmean_time_step, oism.salt1m.datetime, oism.salt1m.salt);
 oism.temp7m_runmean = runmean(time_grid, runmean_time_step, oism.temp7m.datetime, oism.temp7m.temp);
 oism.salt7m_runmean = runmean(time_grid, runmean_time_step, oism.salt7m.datetime, oism.salt7m.salt);
-oism.temp25m_runmean = runmean(time_grid, runmean_time_step, oism.temp25m.datetime, oism.temp25m);
-oism.salt25m_runmean = runmean(time_grid, runmean_time_step, oism.salt25m.datetime, oism.salt25m);
+oism.temp25m_runmean = runmean(time_grid, runmean_time_step, oism.temp25m.datetime, oism.temp25m.temp);
+oism.salt25m_runmean = runmean(time_grid, runmean_time_step, oism.salt25m.datetime, oism.salt25m.salt);
 
 %%% Creating running mean for the OSSM data on time grid
 ossm.time_runmean = time_grid;
-ossm.temp1m_runmean = runmean(time_grid, runmean_time_step, ossm.temp1m.datetime, ossm.temp1m);
-ossm.salt1m_runmean = runmean(time_grid, runmean_time_step, ossm.salt1m.datetime, ossm.salt1m);
-ossm.temp7m_runmean = runmean(time_grid, runmean_time_step, ossm.temp7m.datetime, ossm.temp7m);
-ossm.salt7m_runmean = runmean(time_grid, runmean_time_step, ossm.salt7m.datetime, ossm.salt7m);
+ossm.temp1m_runmean = runmean(time_grid, runmean_time_step, ossm.temp1m.datetime, ossm.temp1m.temp);
+ossm.salt1m_runmean = runmean(time_grid, runmean_time_step, ossm.salt1m.datetime, ossm.salt1m.salt);
+ossm.temp7m_runmean = runmean(time_grid, runmean_time_step, ossm.temp7m.datetime, ossm.temp7m.temp);
+ossm.salt7m_runmean = runmean(time_grid, runmean_time_step, ossm.salt7m.datetime, ossm.salt7m.salt);
 
 %%% Creating running mean for the OOSM data on time grid
 oosm.time_runmean = time_grid;
-oosm.temp1m_runmean = runmean(time_grid, runmean_time_step, oosm.temp1m.datetime, oosm.temp1m);
-oosm.salt1m_runmean = runmean(time_grid, runmean_time_step, oosm.salt1m.datetime, oosm.salt1m);
-oosm.temp7m_runmean = runmean(time_grid, runmean_time_step, oosm.temp7m.datetime, oosm.temp7m);
-oosm.salt7m_runmean = runmean(time_grid, runmean_time_step, oosm.salt7m.datetime, oosm.salt7m);
+oosm.temp1m_runmean = runmean(time_grid, runmean_time_step, oosm.temp1m.datetime, oosm.temp1m.temp);
+oosm.salt1m_runmean = runmean(time_grid, runmean_time_step, oosm.salt1m.datetime, oosm.salt1m.salt);
+oosm.temp7m_runmean = runmean(time_grid, runmean_time_step, oosm.temp7m.datetime, oosm.temp7m.temp);
+oosm.salt7m_runmean = runmean(time_grid, runmean_time_step, oosm.salt7m.datetime, oosm.salt7m.salt);
 
-%%% Creating running mean for wind data on time grid
-metero.time_runmean = time_grid;
-metero.wind_dir_runmean = runmean(time_grid, runmean_time_step, metero.datetime, metero.wind_dir);
-metero.wind_spd_runmean = runmean(time_grid, runmean_time_step, metero.datetime, metero.wind_spd);
+%%% Creating running mean for shelf wind data on time grid
+metero_shelf.time_runmean = time_grid;
+metero_shelf.wind_dir_runmean = runmean(time_grid, runmean_time_step, metero_shelf.datetime, metero_shelf.wind_dir);
+metero_shelf.wind_spd_runmean = runmean(time_grid, runmean_time_step, metero_shelf.datetime, metero_shelf.wind_spd);
+
+%%% Creating running mean for offshore wind data on time grid
+metero_offshore.time_runmean = time_grid;
+metero_offshore.wind_dir_runmean = runmean(time_grid, runmean_time_step, metero_offshore.datetime, metero_offshore.wind_dir);
+metero_offshore.wind_spd_runmean = runmean(time_grid, runmean_time_step, metero_offshore.datetime, metero_offshore.wind_spd);
 
 %%% Creating running mean for river discharge data on time grid
 riverflow.time_runmean = time_grid;
@@ -272,6 +341,67 @@ riverflow.flow_runmean = runmean(time_grid, runmean_time_step, riverflow.datetim
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%% Comparing interpolation and running mean %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+figure('Renderer', 'painters', 'Position', [100 100 1000 800])
+sgtitle('Shelf Wind Speeds')
+
+subplot(311)
+plot(metero_shelf.datetime, metero_shelf.wind_spd, 'r')
+title('Raw Data')
+
+subplot(312)
+plot(metero_shelf.time_interp, metero_shelf.wind_spd_interp, 'b')
+title('Interpolated')
+
+subplot(313)
+plot(metero_shelf.time_runmean, metero_shelf.wind_spd_runmean, 'g')
+title('2-Hour Running Mean')
+
+figure('Renderer', 'painters', 'Position', [100 100 1000 400])
+sgtitle('Shelf Wind Speeds')
+
+subplot(211)
+hold on
+plot(metero_shelf.datetime, metero_shelf.wind_spd, 'r', 'DisplayName', 'Raw')
+plot(metero_shelf.time_interp, metero_shelf.wind_spd_interp, 'b', 'DisplayName', 'Interpolated')
+plot(metero_shelf.time_runmean, metero_shelf.wind_spd_runmean, 'g', 'DisplayName', 'Running Mean')
+hold off
+legend()
+
+subplot(212)
+hold on
+plot(metero_shelf.datetime, metero_shelf.wind_spd, 'r', 'DisplayName', 'Raw')
+plot(metero_shelf.time_interp, metero_shelf.wind_spd_interp, 'b', 'DisplayName', 'Interpolated')
+plot(metero_shelf.time_runmean, metero_shelf.wind_spd_runmean, 'g', 'DisplayName', 'Running Mean')
+hold off
+legend()
+xlim([datetime(2017,1,1) datetime(2017,2,1)])
+
+figure('Renderer', 'painters', 'Position', [100 100 1000 400])
+sgtitle('OISM 1m')
+
+subplot(211)
+hold on
+plot(oism.temp1m.datetime, oism.temp1m.temp, 'r', 'DisplayName', 'Raw')
+plot(oism.time_interp, oism.temp1m_interp, 'b', 'DisplayName', 'Interpolated')
+plot(oism.time_interp, oism.temp1m_runmean, 'g', 'DisplayName', 'Running Mean')
+hold off
+legend()
+
+subplot(212)
+hold on
+plot(oism.temp1m.datetime, oism.temp1m.temp, 'r', 'DisplayName', 'Raw')
+plot(oism.time_interp, oism.temp1m_interp, 'b', 'DisplayName', 'Interpolated')
+plot(oism.time_interp, oism.temp1m_runmean, 'g', 'DisplayName', 'Running Mean')
+hold off
+legend()
+xlim([datetime(2017,12,1) datetime(2018,1,1)])
+
+
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Plotting temperature and salinity time series (both raw and %%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% interpolated) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -281,22 +411,22 @@ figure('Renderer', 'painters', 'Position', [100 100 1000 800])
 sgtitle('Oregon Inshoor Surface Mooring - Near Surface Instrument Frame (7 m)');
 
     subplot(411)
-    plot(oism_interp.time, oism_interp.temp7m) % interpolated temperature
+    plot(oism.time_interp, oism.temp7m_interp) % interpolated temperature
     title('Interpolated')
     ylabel('Temperature (degC)');
 
     subplot(412)
-    plot(oism.temp7m.datetime, oism.temp7m.sea_water_temperature) % raw temperature
+    plot(oism.temp7m.datetime, oism.temp7m.temp) % raw temperature
     title('Raw')
     ylabel('Temperature (degC)');
 
     subplot(413)
-    plot(oism_interp.time, oism_interp.salt7m) % interpolated salinity
+    plot(oism.time_interp, oism.salt7m_interp) % interpolated salinity
     title('Interpolated')
     ylabel('Salinity (g/kg)');
 
     subplot(414)
-    plot(oism.salt7m.datetime, oism.salt7m.sea_water_practical_salinity) % raw salinity
+    plot(oism.salt7m.datetime, oism.salt7m.salt) % raw salinity
     title('Raw')
     ylabel('Salinity (g/kg)');
 
@@ -305,22 +435,22 @@ figure('Renderer', 'painters', 'Position', [100 100 1000 800])
 sgtitle('Oregon Inshoor Surface Mooring - Seafloor Multi-Function Node (25 m)');
 
     subplot(411)
-    plot(oism_interp.time, oism_interp.temp25m) % interpolated temperature
+    plot(oism.time_interp, oism.temp25m_interp) % interpolated temperature
     title('Interpolated')
     ylabel('Temperature (degC)');
 
     subplot(412)
-    plot(oism.temp25m.datetime, oism.temp25m.sea_water_temperature) % raw temperature
+    plot(oism.temp25m.datetime, oism.temp25m.temp) % raw temperature
     title('Raw')
     ylabel('Temperature (degC)');
 
     subplot(413)
-    plot(oism_interp.time, oism_interp.salt25m) % interpolated salinity
+    plot(oism.time_interp, oism.salt25m_interp) % interpolated salinity
     title('Interpolated')
     ylabel('Salinity (g/kg)');
 
     subplot(414)
-    plot(oism.salt25m.datetime, oism.salt25m.sea_water_practical_salinity) % raw salinity
+    plot(oism.salt25m.datetime, oism.salt25m.salt) % raw salinity
     title('Raw')
     ylabel('Salinity (g/kg)');
     
@@ -329,7 +459,7 @@ sgtitle('Oregon Inshoor Surface Mooring - Seafloor Multi-Function Node (25 m)');
 %%%%%%%%%%%%%%%%%%% Comparing different time series %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-oism_var = oism_interp.salt25m;
+oism_var = oism.salt25m_interp;
 oism_label = 'OISM 25m Salinity (g/kg)';
 
 figure('Renderer', 'painters', 'Position', [100 100 1000 800])
@@ -338,32 +468,31 @@ sgtitle('OISM Salinity at 25m')
 %%% OISM Variable vs OOSM 1m Salinity
 subplot(311)
 yyaxis left
-plot(oism_interp.time, oism_var)
+plot(oism.time_interp, oism_var)
 ylabel(oism_label);
 
 yyaxis right
-plot(oism_interp.time, oosm_interp.salt1m)
+plot(oism.time_interp, oosm.salt1m_interp)
 ylabel('OOSM 1m Salinity (g/kg)');
 
 %%% OISM Variable vs Yaquina River discharge
 subplot(312)
 yyaxis left
-plot(oism_interp.time, oism_var)
+plot(oism.time_interp, oism_var)
 ylabel(oism_label)
 
 yyaxis right
-plot(riverflow_interp.time, riverflow_interp.flow)
+plot(riverflow.time_interp, riverflow.flow_interp)
 ylabel('Yaquina River Discharge (m^3/s)');
 
 %%% OISM Variable vs Wind Speed
 subplot(313)
 yyaxis left
-plot(oism_interp.time, oism_var)
+plot(oism.time_interp, oism_var)
 ylabel(oism_label)
 
 yyaxis right
-plot(metero_interp.time, metero_interp.wind_spd)
+plot(metero_shelf.time_interp, metero_shelf.wind_spd_interp)
 ylabel('Wind Speed (m/s)');
-ylim([0 20])
 
 clear oism_var oism_label
