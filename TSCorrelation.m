@@ -1,12 +1,4 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Settings %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%% Creating a consistently spaced time grid
-%time_grid = (datetime(2021,01,01):hours(2):datetime(2022,06,01))';
-time_grid = yaquina_HT.datetime;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%% Loading and pre-processing OOI data %%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -107,6 +99,14 @@ yaquina_all.pres = P;
 clear S T tm C P
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Settings %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Creating a consistently spaced time grid
+time_grid = (datetime(2021,01,01):hours(2):datetime(2022,06,01))';
+dt = 2;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%% Creating a running mean for all data %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -123,23 +123,192 @@ oism.temp25m_runmean = runmean(time_grid, runmean_time_step, oism.temp25m.dateti
 oism.salt25m_runmean = runmean(time_grid, runmean_time_step, oism.salt25m.datetime, oism.salt25m.salt);
 
 %%% Creating running mean for the Yaquina Data
-% yaquina_HT.datetime_runmean = time_grid;
-% yaquina_HT.temp_runmean = runmean(time_grid, runmean_time_step, yaquina_HT.datetime, yaquina_HT.temp);
-% yaquina_HT.salt_runmean = runmean(time_grid, runmean_time_step, yaquina_HT.datetime, yaquina_HT.salt);
+yaquina_HT.datetime_runmean = time_grid;
+yaquina_HT.temp_runmean = runmean(time_grid, runmean_time_step, yaquina_HT.datetime, yaquina_HT.temp);
+yaquina_HT.salt_runmean = runmean(time_grid, runmean_time_step, yaquina_HT.datetime, yaquina_HT.salt);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%% Visualizing Time Series %%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+
+%%% Beginning and end dates of dry season
+dry_start = datetime(2021,05,01);
+dry_end = datetime(2021,11,01);
+
+%%% Temperature subplot
+figure()
+subplot(211)
+hold on
+plot(oism.datetime_runmean, oism.temp1m_runmean)
+scatter(yaquina_HT.datetime_runmean, yaquina_HT.temp_runmean, '.')
+xline(dry_start, 'r');
+xline(dry_end, 'r');
+hold off
+
+%%% Salinity subplot
+subplot(212)
+hold on
+plot(oism.datetime_runmean, oism.salt1m_runmean)
+scatter(yaquina_HT.datetime_runmean, yaquina_HT.salt_runmean, '.')
+xline(dry_start, 'r');
+xline(dry_end, 'r');
+hold off
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%% Conducting Correlation Analysis %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Full Time Series
 
-scatter(oism.temp1m_runmean,yaquina_HT.temp) 
+%%%%%%%%%%%%%%%%
+%%% Salinity %%%
+%%%%%%%%%%%%%%%%
 
-hold on
-plot(oism.datetime_runmean, oism.temp1m_runmean)
-plot(yaquina_HT.datetime, yaquina_HT.temp)
-hold off
+%%% Scattering 
+figure()
+scatter(oism.salt1m_runmean, yaquina_HT.salt_runmean)
+title('Full Time Series - Salinity');
 
-[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.temp1m_runmean, yaquina_HT.temp, 10);
+%%% Calculating covariance
+[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.salt1m_runmean, yaquina_HT.salt_runmean, 36);
 
-pearson_corr_coeff = Rxy./(s2x.*s2y);
+%%% Getting Pearson Correlation Coefficient from covariance
+pearson_corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
 
+%%% Identifying max correlation coefficient
 [M,I] = max(pearson_corr_coeff);
+disp('   ');
+disp('Highest Salinity Correlation Coefficient: ' + string(M));
+
+%%% Calculating the corresponding time lag
+disp('Corresponding Time Lag: ' + string(k(I)*dt) + ' Hours');
+
+clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
+
+%%%%%%%%%%%%%%%%%%%
+%%% Temperature %%%
+%%%%%%%%%%%%%%%%%%%
+
+%%% Scattering 
+figure()
+scatter(oism.temp1m_runmean, yaquina_HT.temp_runmean)
+title('Full Time Series - Temperature')
+
+%%% Calculating covariance
+[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.temp1m_runmean, yaquina_HT.temp_runmean, 36);
+
+%%% Getting Pearson Correlation Coefficient from covariance
+pearson_corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
+
+%%% Identifying max correlation coefficient
+[M,I] = max(pearson_corr_coeff);
+disp('Highest Temperature Correlation Coefficient: ' + string(M));
+
+%%% Calculating the corresponding time lag
+disp('Corresponding Time Lag: ' + string(k(I)*dt) + ' Hours');
+
+clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Dry Season
+
+%%%%%%%%%%%%%%%%
+%%% Salinity %%%
+%%%%%%%%%%%%%%%%
+
+%%% Scattering 
+figure()
+scatter(oism.salt1m_runmean(oism.datetime_runmean > dry_start & oism.datetime_runmean < dry_end), yaquina_HT.salt_runmean(yaquina_HT.datetime_runmean > dry_start & yaquina_HT.datetime_runmean < dry_end))
+title('Dry Season - Salinity');
+
+%%% Calculating covariance
+[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.salt1m_runmean(oism.datetime_runmean > dry_start & oism.datetime_runmean < dry_end), yaquina_HT.salt_runmean(yaquina_HT.datetime_runmean > dry_start & yaquina_HT.datetime_runmean < dry_end), 36);
+
+%%% Getting Pearson Correlation Coefficient from covariance
+pearson_corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
+
+%%% Identifying max correlation coefficient
+[M,I] = max(pearson_corr_coeff);
+disp('Highest Dry Season Salinity Correlation Coefficient: ' + string(M));
+
+%%% Calculating the corresponding time lag
+disp('Corresponding Time Lag: ' + string(k(I)*dt) + ' Hours');
+
+clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
+
+%%%%%%%%%%%%%%%%%%%
+%%% Temperature %%%
+%%%%%%%%%%%%%%%%%%%
+
+%%% Scattering 
+figure()
+scatter(oism.temp1m_runmean(oism.datetime_runmean > dry_start & oism.datetime_runmean < dry_end), yaquina_HT.temp_runmean(yaquina_HT.datetime_runmean > dry_start & yaquina_HT.datetime_runmean < dry_end))
+title('Dry Season - Temperature');
+
+%%% Calculating covariance
+[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.temp1m_runmean(oism.datetime_runmean > dry_start & oism.datetime_runmean < dry_end), yaquina_HT.temp_runmean(yaquina_HT.datetime_runmean > dry_start & yaquina_HT.datetime_runmean < dry_end), 36);
+
+%%% Getting Pearson Correlation Coefficient from covariance
+pearson_corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
+
+%%% Identifying max correlation coefficient
+[M,I] = max(pearson_corr_coeff);
+disp('Highest Dry Season Temperature Correlation Coefficient: ' + string(M));
+
+%%% Calculating the corresponding time lag
+disp('Corresponding Time Lag: ' + string(k(I)*dt) + ' Hours');
+
+clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Wet Season
+
+%%%%%%%%%%%%%%%%
+%%% Salinity %%%
+%%%%%%%%%%%%%%%%
+
+%%% Scattering 
+figure()
+scatter(oism.salt1m_runmean(oism.datetime_runmean < dry_start | oism.datetime_runmean > dry_end), yaquina_HT.salt_runmean(yaquina_HT.datetime_runmean < dry_start | yaquina_HT.datetime_runmean > dry_end))
+title('Wet Season - Salinity')
+
+%%% Calculating covariance
+[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.salt1m_runmean(oism.datetime_runmean < dry_start | oism.datetime_runmean > dry_end), yaquina_HT.salt_runmean(yaquina_HT.datetime_runmean < dry_start | yaquina_HT.datetime_runmean > dry_end), 36);
+
+%%% Getting Pearson Correlation Coefficient from covariance
+pearson_corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
+
+%%% Identifying max correlation coefficient
+[M,I] = max(pearson_corr_coeff);
+disp('Highest Wet Season Salinity Correlation Coefficient: ' + string(M));
+
+%%% Calculating the corresponding time lag
+disp('Corresponding Time Lag: ' + string(k(I)*dt) + ' Hours');
+
+clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
+
+%%%%%%%%%%%%%%%%%%%
+%%% Temperature %%%
+%%%%%%%%%%%%%%%%%%%
+
+%%% Scattering 
+figure()
+scatter(oism.temp1m_runmean(oism.datetime_runmean < dry_start | oism.datetime_runmean > dry_end), yaquina_HT.temp_runmean(yaquina_HT.datetime_runmean < dry_start | yaquina_HT.datetime_runmean > dry_end))
+title('Wet Season - Temperature');
+
+%%% Calculating covariance
+[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.temp1m_runmean(oism.datetime_runmean < dry_start | oism.datetime_runmean > dry_end), yaquina_HT.temp_runmean(yaquina_HT.datetime_runmean < dry_start | yaquina_HT.datetime_runmean > dry_end), 36);
+
+%%% Getting Pearson Correlation Coefficient from covariance
+pearson_corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
+
+%%% Identifying max correlation coefficient
+[M,I] = max(pearson_corr_coeff);
+disp('Highest Wet Season Temperature Correlation Coefficient: ' + string(M));
+
+%%% Calculating the corresponding time lag
+disp('Corresponding Time Lag: ' + string(k(I)*dt) + ' Hours');
+
+clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
