@@ -50,11 +50,87 @@ oism.salt1m = renamevars(oism.salt1m,'sea_water_practical_salinity','salt');
 oism.temp7m = renamevars(oism.temp7m,'sea_water_temperature','temp');
 oism.salt7m = renamevars(oism.salt7m,'sea_water_practical_salinity','salt');
 oism.pco2_7m = renamevars(oism.pco2_7m,'partial_pressure_of_carbon_dioxide_in_sea_water','pco2');
-oism.do7m = renamevars(oism.do7m,'mole_concentration_of_dissolved_molecular_oxygen_in_sea_water','do');
+oism.do7m = renamevars(oism.do7m,'moles_of_oxygen_per_unit_mass_in_sea_water','do');
 oism.temp25m = renamevars(oism.temp25m,'sea_water_temperature','temp');
 oism.salt25m = renamevars(oism.salt25m,'sea_water_practical_salinity','salt');
 oism.pco2_25m = renamevars(oism.pco2_25m,'partial_pressure_of_carbon_dioxide_in_sea_water','pco2');
-oism.do25m = renamevars(oism.do25m,'mole_concentration_of_dissolved_molecular_oxygen_in_sea_water','do');
+oism.do25m = renamevars(oism.do25m,'moles_of_oxygen_per_unit_mass_in_sea_water','do');
+
+%%% Filtering pCO2 values to remove obviously bad data
+oism.pco2_7m.pco2(oism.pco2_7m.pco2 > 1500) = NaN;
+oism.pco2_25m.pco2(oism.pco2_25m.pco2 > 1500) = NaN;
+
+%%% Removing bad pCO2 data (according to OOI annotations)
+bad_data_7m = readtable('Bad_Data_OOI_CE_OISM_NSIF_pCO2.csv');
+for i = 1:height(bad_data_7m)
+    oism.pco2_7m.pco2(oism.pco2_7m.datetime > bad_data_7m.StartDate(i) & oism.pco2_7m.datetime < bad_data_7m.EndDate(i)) = NaN;
+end
+
+bad_data_25m = readtable('Bad_Data_OOI_CE_OISM_SMFN_pCO2.csv');
+for i = 1:height(bad_data_25m)
+    oism.pco2_25m.pco2(oism.pco2_25m.datetime > bad_data_25m.StartDate(i) & oism.pco2_25m.datetime < bad_data_25m.EndDate(i)) = NaN;
+end
+
+clear bad_data_7m bad_data_25m i
+
+%%% Filtering DO values to remove obviously bad data
+oism.do7m.do(oism.do7m.do <= 0) = NaN;
+oism.do25m.do(oism.do25m.do <= 0) = NaN;
+
+%%% Removing bad DO data (according to OOI annotations)
+bad_data_7m = readtable('Bad_Data_OOI_CE_OISM_NSIF_DO.csv');
+for i = 1:height(bad_data_7m)
+    oism.do7m.do(oism.do7m.datetime > bad_data_7m.StartDate(i) & oism.do7m.datetime < bad_data_7m.EndDate(i)) = NaN;
+end
+
+bad_data_25m = readtable('Bad_Data_OOI_CE_OISM_SMFN_DO.csv');
+for i = 1:height(bad_data_25m)
+    oism.do25m.do(oism.do25m.datetime > bad_data_25m.StartDate(i) & oism.do25m.datetime < bad_data_25m.EndDate(i)) = NaN;
+end
+
+clear bad_data_7m bad_data_25m i
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Loading OISM QC'd DO Data %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Loading 7m QC DO Data 
+load('OOI_CE_OISM_NSIF_QC_DO.mat')
+
+%%% Formatting
+do7m_qc.do = dissolved_oxygen';
+do7m_qc.datetime = datetime(time,'ConvertFrom','datenum')';
+do7m_qc.fail_biofoul_datetime = datetime(fail_biofoul, 'ConvertFrom', 'datenum')';
+
+%%% Saving to structure
+oism.do7m_qc = do7m_qc;
+
+clear dissolved_oxygen fail_biofoul time do7m_qc
+
+figure()
+subplot(311)
+plot(oism.do7m_qc.datetime, oism.do7m_qc.do)
+
+oism.do7m_qc.do(ismember(oism.do7m_qc.datetime, oism.do7m_qc.fail_biofoul_datetime)) = NaN;
+
+subplot(312)
+plot(oism.do7m_qc.datetime, oism.do7m_qc.do)
+
+subplot(313)
+plot(oism.do7m.datetime, oism.do7m.do)
+
+%%% Loading 25m QC DO Data
+load('OOI_CE_OISM_SMFN_QC_DO.mat')
+
+%%% Formatting
+do25m_qc.do = dissolved_oxygen';
+do25m_qc.datetime = datetime(time,'ConvertFrom','datenum')';
+do25m_qc.fail_biofoul_datetime = datetime(fail_biofoul, 'ConvertFrom', 'datenum')';
+
+%%% Saving to structure
+oism.do25m_qc = do25m_qc;
+
+clear dissolved_oxygen fail_biofoul time do25m_qc
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Loading OSSM data at different depths %%%
@@ -87,7 +163,27 @@ ossm.salt1m = renamevars(ossm.salt1m,'sea_water_practical_salinity','salt');
 ossm.pco2_1m = renamevars(ossm.pco2_1m,'surface_partial_pressure_of_carbon_dioxide_in_sea_water','pco2');
 ossm.temp7m = renamevars(ossm.temp7m,'sea_water_temperature','temp');
 ossm.salt7m = renamevars(ossm.salt7m,'sea_water_practical_salinity','salt');
-ossm.do7m = renamevars(ossm.do7m,'mole_concentration_of_dissolved_molecular_oxygen_in_sea_water','do');
+ossm.do7m = renamevars(ossm.do7m,'moles_of_oxygen_per_unit_mass_in_sea_water','do');
+
+%%% Filtering pCO2 values to remove obviously bad data
+ossm.pco2_1m.pco2(ossm.pco2_1m.pco2 > 1500) = NaN;
+
+%%% Removing bad pCO2 data (according to OOI annotations)
+bad_data_1m = readtable('Bad_Data_OOI_CE_OSSM_SB_pCO2.csv');
+for i = 1:height(bad_data_1m)
+    ossm.pco2_1m.pco2(ossm.pco2_1m.datetime > bad_data_1m.StartDate(i) & ossm.pco2_1m.datetime < bad_data_1m.EndDate(i)) = NaN;
+end
+
+%%% Filtering DO values to remove obviously bad data
+ossm.do7m.do(ossm.do7m.do < 0) = NaN;
+
+%%% Removing bad DO data (according to OOI annotations)
+bad_data_7m = readtable('Bad_Data_OOI_CE_OSSM_NSIF_DO.csv');
+for i = 1:height(bad_data_7m)
+    ossm.do7m.do(ossm.do7m.datetime > bad_data_7m.StartDate(i) & ossm.do7m.datetime < bad_data_7m.EndDate(i)) = NaN;
+end
+
+clear bad_data_1m bad_data_7m
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Loading OOSM data at different depths %%%
@@ -120,7 +216,17 @@ oosm.salt1m = renamevars(oosm.salt1m,'sea_water_practical_salinity','salt');
 oosm.pco2_1m = renamevars(oosm.pco2_1m,'surface_partial_pressure_of_carbon_dioxide_in_sea_water','pco2');
 oosm.temp7m = renamevars(oosm.temp7m,'sea_water_temperature','temp');
 oosm.salt7m = renamevars(oosm.salt7m,'sea_water_practical_salinity','salt');
-oosm.do7m = renamevars(oosm.do7m,'mole_concentration_of_dissolved_molecular_oxygen_in_sea_water','do');
+oosm.do7m = renamevars(oosm.do7m,'moles_of_oxygen_per_unit_mass_in_sea_water','do');
+
+%%% Filtering pCO2 values to remove obviously bad data
+oosm.pco2_1m.pco2(oosm.pco2_1m.pco2 > 1500) = NaN;
+
+%%% Removing bad pCO2 data (according to OOI annotations)
+
+%%% Filtering DO values to remove obviously bad data
+oosm.do7m.do(oosm.do7m.do < 0) = NaN;
+
+%%% Removing bad DO data (according to OOI annotations)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%% Loading and pre-processing meterological data %%%%%%%%%%%%%%
@@ -165,7 +271,7 @@ mnts = table2array(vertcat(metero_unfmt.data2016(:,5),metero_unfmt.data2017(:,5)
 snds = zeros(size(yrs)); %%% Setting seconds to 0
 
 %%% Converting time of measurement data to datetime
-metero_shelf.datetime = datetime(yrs,mths,days,hrs,mnts, snds);
+metero_shelf.datetime = datetime(yrs,mths,days,hrs,mnts,snds);
 
 %%% Removing missing data
 bad_data = find(metero_shelf.wind_spd > 90 | metero_shelf.wind_dir > 900);
@@ -241,6 +347,21 @@ riverflow.datetime = datetime(riverflow_unfmt{:,2}, 'InputFormat', 'MM-dd-yyyy H
 
 clear riverflow_unfmt
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%% Loading and pre-processing Yaquina station data %%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Loading station data
+load('HFhightide.mat')
+
+%%% Formatting in a structure
+yaquina_station.datetime = tm;
+yaquina_station.temp = T;
+yaquina_station.temp_std = Tsd;
+yaquina_station.salt = S;
+yaquina_station.salt_std = Ssd;
+
+clear S Ssd T tm Tsd 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%% Interpolating all data to a consistent time grid %%%%%%%%%%%%%
@@ -348,194 +469,57 @@ metero_offshore.wind_spd_runmean = runmean(time_grid, runmean_time_step, metero_
 riverflow.datetime_runmean = time_grid;
 riverflow.flow_runmean = runmean(time_grid, runmean_time_step, riverflow.datetime, riverflow.flow);
 
-%%
-% %%% Plotting time gaps between measurements (used to determine appropriate
-% %%% time grid for interpolation)
-% 
-% %%% OISM Near Surface Instrument Frame
-% figure('Renderer', 'painters', 'Position', [100 100 1000 600])
-% sgtitle('Oregon Inshoor Surface Mooring - Near Surface Instrument Frame (7 m) - Temperature')
-% 
-% %%% Full scatter plot
-% subplot(211);
-% scatter(oism.temp7m.datetime(1:end-1), hours(diff(vertcat(oism.temp7m.datetime))), 'filled');
-% ylabel('Hours Between Measurements')
-% 
-% %%% Zooming in
-% subplot(212);
-% scatter(oism.temp7m.datetime(1:end-1), hours(diff(vertcat(oism.temp7m.datetime))), 'filled');
-% ylabel('Hours Between Measurements')
-% ylim([0 5])
-% 
-% %%% OSIM Seafloor Multi-Function Node
-% figure('Renderer', 'painters', 'Position', [100 100 1000 600])
-% sgtitle('Oregon Inshoor Surface Mooring - Seafloor Multi-Function Node (25 m) - Temperature')
-% 
-% %%% Full scatter plot
-% subplot(211);
-% scatter(oism.temp25m.datetime(1:end-1), hours(diff(vertcat(oism.temp25m.datetime))), 'filled');
-% ylabel('Hours Between Measurements')
-% 
-% %%% Zooming in
-% subplot(212);
-% scatter(oism.temp25m.datetime(1:end-1), hours(diff(vertcat(oism.temp25m.datetime))), 'filled');
-% ylabel('Hours Between Measurements')
-% ylim([0 5])
 
 %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%% Comparing interpolation and running mean %%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%% Creating Figure %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-figure('Renderer', 'painters', 'Position', [100 100 1000 800])
-sgtitle('Shelf Wind Speeds')
+figure('Renderer', 'painters', 'Position', [100 100 1000 1000])
+sgtitle('Oregon Inshore Surface Mooring - 7m')
 
-subplot(311)
-plot(metero_shelf.datetime, metero_shelf.wind_spd, 'r')
-title('Raw Data')
+%%% Temperature Subplot
+ax1 = subplot(311);
+plot(oism.datetime_interp, oism.temp7m_interp)
+ylabel('Temperature (degC)')
 
-subplot(312)
-plot(metero_shelf.time_interp, metero_shelf.wind_spd_interp, 'b')
-title('Interpolated')
+%%% Salinity Subplot
+ax2 = subplot(312);
+plot(oism.datetime_interp, oism.salt7m_interp);
+ylabel('Salinity (psu)')
 
-subplot(313)
-plot(metero_shelf.time_runmean, metero_shelf.wind_spd_runmean, 'g')
-title('2-Hour Running Mean')
+%%% pCO2 Subplot
+ax3 = subplot(313);
+plot(oism.datetime_interp, oism.pco2_7m_interp);
+ylabel('pCO_2 (microatm)')
 
-figure('Renderer', 'painters', 'Position', [100 100 1000 400])
-sgtitle('Shelf Wind Speeds')
+linkaxes([ax1 ax2 ax3], 'x')
 
-subplot(211)
-hold on
-plot(metero_shelf.datetime, metero_shelf.wind_spd, 'r', 'DisplayName', 'Raw')
-plot(metero_shelf.time_interp, metero_shelf.wind_spd_interp, 'b', 'DisplayName', 'Interpolated')
-plot(metero_shelf.time_runmean, metero_shelf.wind_spd_runmean, 'g', 'DisplayName', 'Running Mean')
-hold off
-legend()
+clear ax1 ax2 ax3
 
-subplot(212)
-hold on
-plot(metero_shelf.datetime, metero_shelf.wind_spd, 'r', 'DisplayName', 'Raw')
-plot(metero_shelf.time_interp, metero_shelf.wind_spd_interp, 'b', 'DisplayName', 'Interpolated')
-plot(metero_shelf.time_runmean, metero_shelf.wind_spd_runmean, 'g', 'DisplayName', 'Running Mean')
-hold off
-legend()
-xlim([datetime(2017,1,1) datetime(2017,2,1)])
-
-figure('Renderer', 'painters', 'Position', [100 100 1000 400])
-sgtitle('OISM 1m')
-
-subplot(211)
-hold on
-plot(oism.temp1m.datetime, oism.temp1m.temp, 'r', 'DisplayName', 'Raw')
-plot(oism.time_interp, oism.temp1m_interp, 'b', 'DisplayName', 'Interpolated')
-plot(oism.time_interp, oism.temp1m_runmean, 'g', 'DisplayName', 'Running Mean')
-hold off
-legend()
-
-subplot(212)
-hold on
-plot(oism.temp1m.datetime, oism.temp1m.temp, 'r', 'DisplayName', 'Raw')
-plot(oism.time_interp, oism.temp1m_interp, 'b', 'DisplayName', 'Interpolated')
-plot(oism.time_interp, oism.temp1m_runmean, 'g', 'DisplayName', 'Running Mean')
-hold off
-legend()
-xlim([datetime(2017,12,1) datetime(2018,1,1)])
-
-
-%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%% Plotting temperature and salinity time series (both raw and %%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% interpolated) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%% OISM Near Surface Instrument Frame
-figure('Renderer', 'painters', 'Position', [100 100 1000 800])
-sgtitle('Oregon Inshoor Surface Mooring - Near Surface Instrument Frame (7 m)');
+figure('Renderer', 'painters', 'Position', [100 100 1000 1000])
+sgtitle('Oregon Inshore Surface Mooring - 7m')
 
-    subplot(411)
-    plot(oism.time_interp, oism.temp7m_interp) % interpolated temperature
-    title('Interpolated')
-    ylabel('Temperature (degC)');
+%%% Temperature Subplot
+ax1 = subplot(311);
+plot(oism.datetime_interp, oism.temp7m_interp)
+ylabel('Temperature (degC)')
+xlim([datetime(2014,04,17) datetime(2022,07,01)])
 
-    subplot(412)
-    plot(oism.temp7m.datetime, oism.temp7m.temp) % raw temperature
-    title('Raw')
-    ylabel('Temperature (degC)');
+%%% Salinity Subplot
+ax2 = subplot(312);
+plot(oism.datetime_interp, oism.salt7m_interp);
+ylabel('Salinity (psu)')
+xlim([datetime(2014,04,17) datetime(2022,07,01)])
 
-    subplot(413)
-    plot(oism.time_interp, oism.salt7m_interp) % interpolated salinity
-    title('Interpolated')
-    ylabel('Salinity (g/kg)');
+%%% DO Subplot
+ax3 = subplot(313);
+plot(oism.datetime_interp, oism.do7m_interp);
+ylabel('Dissolved Oxygen (micromol/kg)')
+xlim([datetime(2014,04,17) datetime(2022,07,01)])
 
-    subplot(414)
-    plot(oism.salt7m.datetime, oism.salt7m.salt) % raw salinity
-    title('Raw')
-    ylabel('Salinity (g/kg)');
+linkaxes([ax1 ax2 ax3], 'x')
 
-%%% OISM Seafloor Multi-Function Node
-figure('Renderer', 'painters', 'Position', [100 100 1000 800])
-sgtitle('Oregon Inshoor Surface Mooring - Seafloor Multi-Function Node (25 m)');
-
-    subplot(411)
-    plot(oism.time_interp, oism.temp25m_interp) % interpolated temperature
-    title('Interpolated')
-    ylabel('Temperature (degC)');
-
-    subplot(412)
-    plot(oism.temp25m.datetime, oism.temp25m.temp) % raw temperature
-    title('Raw')
-    ylabel('Temperature (degC)');
-
-    subplot(413)
-    plot(oism.time_interp, oism.salt25m_interp) % interpolated salinity
-    title('Interpolated')
-    ylabel('Salinity (g/kg)');
-
-    subplot(414)
-    plot(oism.salt25m.datetime, oism.salt25m.salt) % raw salinity
-    title('Raw')
-    ylabel('Salinity (g/kg)');
-    
-%%    
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%% Comparing different time series %%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-oism_var = oism.salt25m_interp;
-oism_label = 'OISM 25m Salinity (g/kg)';
-
-figure('Renderer', 'painters', 'Position', [100 100 1000 800])
-sgtitle('OISM Salinity at 25m')
-
-%%% OISM Variable vs OOSM 1m Salinity
-subplot(311)
-yyaxis left
-plot(oism.time_interp, oism_var)
-ylabel(oism_label);
-
-yyaxis right
-plot(oism.time_interp, oosm.salt1m_interp)
-ylabel('OOSM 1m Salinity (g/kg)');
-
-%%% OISM Variable vs Yaquina River discharge
-subplot(312)
-yyaxis left
-plot(oism.time_interp, oism_var)
-ylabel(oism_label)
-
-yyaxis right
-plot(riverflow.time_interp, riverflow.flow_interp)
-ylabel('Yaquina River Discharge (m^3/s)');
-
-%%% OISM Variable vs Wind Speed
-subplot(313)
-yyaxis left
-plot(oism.time_interp, oism_var)
-ylabel(oism_label)
-
-yyaxis right
-plot(metero_shelf.time_interp, metero_shelf.wind_spd_interp)
-ylabel('Wind Speed (m/s)');
-
-clear oism_var oism_label
+clear ax1 ax2 ax3
