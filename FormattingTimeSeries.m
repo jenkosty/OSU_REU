@@ -3,7 +3,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% Creating a consistently spaced time grid
-time_grid = (datetime(2014,04,01):hours(2):datetime(2022,06,01))';
+time_grid = (datetime(2014,04,01):days(1):datetime(2022,07,01))';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%% Loading and pre-processing OOI data %%%%%%%%%%%%%%%%%%%%%
@@ -74,8 +74,8 @@ end
 clear bad_data_7m bad_data_25m i
 
 %%% Filtering DO values to remove obviously bad data
-oism.do7m.do(oism.do7m.do <= 0) = NaN;
-oism.do25m.do(oism.do25m.do <= 0) = NaN;
+oism.do7m.do(oism.do7m.do < 0) = NaN;
+oism.do25m.do(oism.do25m.do < 0) = NaN;
 
 %%% Removing bad DO data (according to OOI annotations)
 bad_data_7m = readtable('Bad_Data_OOI_CE_OISM_NSIF_DO.csv');
@@ -107,17 +107,8 @@ oism.do7m_qc = do7m_qc;
 
 clear dissolved_oxygen fail_biofoul time do7m_qc
 
-figure()
-subplot(311)
-plot(oism.do7m_qc.datetime, oism.do7m_qc.do)
-
+%%% Removing Bad Data
 oism.do7m_qc.do(ismember(oism.do7m_qc.datetime, oism.do7m_qc.fail_biofoul_datetime)) = NaN;
-
-subplot(312)
-plot(oism.do7m_qc.datetime, oism.do7m_qc.do)
-
-subplot(313)
-plot(oism.do7m.datetime, oism.do7m.do)
 
 %%% Loading 25m QC DO Data
 load('OOI_CE_OISM_SMFN_QC_DO.mat')
@@ -130,7 +121,12 @@ do25m_qc.fail_biofoul_datetime = datetime(fail_biofoul, 'ConvertFrom', 'datenum'
 %%% Saving to structure
 oism.do25m_qc = do25m_qc;
 
+%%% Removing Bad Data
+oism.do7m_qc.do(ismember(oism.do25m_qc.datetime, oism.do25m_qc.fail_biofoul_datetime)) = NaN;
+
 clear dissolved_oxygen fail_biofoul time do25m_qc
+
+save('/Users/jenkosty/Research/OSU_REU/Processed_Data/OOI_CE_OISM', 'oism')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Loading OSSM data at different depths %%%
@@ -183,8 +179,10 @@ for i = 1:height(bad_data_7m)
     ossm.do7m.do(ossm.do7m.datetime > bad_data_7m.StartDate(i) & ossm.do7m.datetime < bad_data_7m.EndDate(i)) = NaN;
 end
 
-clear bad_data_1m bad_data_7m
+clear bad_data_1m bad_data_7m i
 
+save('/Users/jenkosty/Research/OSU_REU/Processed_Data/OOI_CE_OSSM', 'ossm')
+ 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Loading OOSM data at different depths %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -222,11 +220,23 @@ oosm.do7m = renamevars(oosm.do7m,'moles_of_oxygen_per_unit_mass_in_sea_water','d
 oosm.pco2_1m.pco2(oosm.pco2_1m.pco2 > 1500) = NaN;
 
 %%% Removing bad pCO2 data (according to OOI annotations)
+bad_data_1m = readtable('Bad_Data_OOI_CE_OOSM_SB_pCO2.csv');
+for i = 1:height(bad_data_1m)
+    oosm.pco2_1m.pco2(oosm.pco2_1m.datetime > bad_data_1m.StartDate(i) & oosm.pco2_1m.datetime < bad_data_1m.EndDate(i)) = NaN;
+end
 
 %%% Filtering DO values to remove obviously bad data
 oosm.do7m.do(oosm.do7m.do < 0) = NaN;
 
 %%% Removing bad DO data (according to OOI annotations)
+bad_data_7m = readtable('Bad_Data_OOI_CE_OOSM_NSIF_DO.csv');
+for i = 1:height(bad_data_7m)
+    oosm.do7m.do(oosm.do7m.datetime > bad_data_7m.StartDate(i) & oosm.do7m.datetime < bad_data_7m.EndDate(i)) = NaN;
+end
+
+clear bad_data_1m bad_data_7m i
+
+save('/Users/jenkosty/Research/OSU_REU/Processed_Data/OOI_CE_OOSM', 'oosm')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%% Loading and pre-processing meterological data %%%%%%%%%%%%%%
@@ -330,6 +340,8 @@ metero_offshore.datetime(bad_data) = [];
 
 clear yrs mths days hrs mnts snds metero_unfmt bad_data
 
+save('/Users/jenkosty/Research/OSU_REU/Processed_Data/MeterologicalData', 'metero_shelf', 'metero_offshore');
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%% Loading and pre-processing river discharge data %%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -347,6 +359,8 @@ riverflow.datetime = datetime(riverflow_unfmt{:,2}, 'InputFormat', 'MM-dd-yyyy H
 
 clear riverflow_unfmt
 
+save('/Users/jenkosty/Research/OSU_REU/Processed_Data/YaquinaRiverDischarge', 'riverflow');
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%% Loading and pre-processing Yaquina station data %%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -355,13 +369,70 @@ clear riverflow_unfmt
 load('HFhightide.mat')
 
 %%% Formatting in a structure
-yaquina_station.datetime = tm;
-yaquina_station.temp = T;
-yaquina_station.temp_std = Tsd;
-yaquina_station.salt = S;
-yaquina_station.salt_std = Ssd;
+yaquina_HT.datetime = tm;
+yaquina_HT.temp = T;
+yaquina_HT.temp_std = Tsd;
+yaquina_HT.salt = S;
+yaquina_HT.salt_std = Ssd;
 
 clear S Ssd T tm Tsd 
+
+%%% Loading station data
+load('HFsurface.mat')
+
+%%% Formatting in a structure
+yaquina_all.datetime = tm;
+yaquina_all.temp = T;
+yaquina_all.salt = S;
+yaquina_all.cond = C;
+yaquina_all.pres = P;
+
+clear S T tm C P
+
+save('/Users/jenkosty/Research/OSU_REU/Processed_Data/YaquinaTS', 'yaquina_HT', 'yaquina_all');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%% Loading and pre-processing tide data %%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Importing Yearly Tide Data
+tides2020 = readtable('MSL_2020_HL.csv');
+tides2021 = readtable('MSL_2021_HL.csv');
+tides2022 = readtable('MSL_2022_HL.csv');
+
+%%% Combining Tide Data into 1 table
+tides = [tides2020; tides2021; tides2022];
+clear tides2020 tides2021 tides2022
+
+%%% Converting tide data to meters
+tides.MSL = str2double(tides.Verified_ft_) / 3.281;
+
+%%% Converting time data to datetime
+times_string = string(tides.Date) + ' ' + string(tides.Time_GMT_) + ':00';
+tides.datetime = datetime(times_string, 'InputFormat', 'yyyy/MM/dd HH:mm:ss');
+clear times_string
+
+save('/Users/jenkosty/Research/OSU_REU/Processed_Data/HLTides', 'tides')
+
+%%% Importing Yearly Tide Data
+tides2020 = readtable('MSL_2020_Hourly.csv');
+tides2021 = readtable('MSL_2021_Hourly.csv');
+tides2022 = readtable('MSL_2022_Hourly.csv');
+
+%%% Combining Tide Data into 1 table
+tides = [tides2020; tides2021; tides2022];
+clear tides2020 tides2021 tides2022
+
+%%% Converting tide data to meters
+tides.MSL = tides.Verified_ft_ / 3.281;
+
+%%% Converting time data to datetime
+times_string = string(tides.Date) + ' ' + string(tides.Time_GMT_) + ':00';
+tides.datetime = datetime(times_string, 'InputFormat', 'yyyy/MM/dd HH:mm:ss');
+clear times_string
+
+save('/Users/jenkosty/Research/OSU_REU/Processed_Data/HourlyTides', 'tides')
+
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%% Interpolating all data to a consistent time grid %%%%%%%%%%%%%
@@ -422,104 +493,27 @@ riverflow.flow_interp = interp1gap(datenum(riverflow.datetime), riverflow.flow, 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% Setting the time step for the running mean
-runmean_time_step = datenum(hours(1));
+runmean_time_step = datenum(hours(12));
 
 %%% Creating running mean for the OISM data on time grid
-oism.datetime_runmean = time_grid;
-oism.temp1m_runmean = runmean(time_grid, runmean_time_step, oism.temp1m.datetime, oism.temp1m.temp);
-oism.salt1m_runmean = runmean(time_grid, runmean_time_step, oism.salt1m.datetime, oism.salt1m.salt);
-oism.temp7m_runmean = runmean(time_grid, runmean_time_step, oism.temp7m.datetime, oism.temp7m.temp);
-oism.salt7m_runmean = runmean(time_grid, runmean_time_step, oism.salt7m.datetime, oism.salt7m.salt);
-oism.pco2_7m_runmean = runmean(time_grid, runmean_time_step, oism.pco2_7m.datetime, oism.pco2_7m.pco2);
-oism.do7m_runmean = runmean(time_grid, runmean_time_step, oism.do7m.datetime, oism.do7m.do);
-oism.temp25m_runmean = runmean(time_grid, runmean_time_step, oism.temp25m.datetime, oism.temp25m.temp);
-oism.salt25m_runmean = runmean(time_grid, runmean_time_step, oism.salt25m.datetime, oism.salt25m.salt);
-oism.pco2_25m_runmean = runmean(time_grid, runmean_time_step, oism.pco2_25m.datetime, oism.pco2_25m.pco2);
-oism.do25m_runmean = runmean(time_grid, runmean_time_step, oism.do25m.datetime, oism.do25m.do);
+oism.datetime_1dayrunmean = time_grid;
+oism.temp1m_1dayrunmean = runmean(datenum(time_grid), datenum(oism.temp1m.datetime), oism.temp1m.temp);
+oism.salt1m_1dayrunmean = runmean(datenum(time_grid), datenum(oism.salt1m.datetime), oism.salt1m.salt);
+oism.temp7m_1dayrunmean = runmean(datenum(time_grid), datenum(oism.temp7m.datetime), oism.temp7m.temp);
+oism.salt7m_1dayrunmean = runmean(datenum(time_grid), datenum(oism.salt7m.datetime), oism.salt7m.salt);
+oism.pco2_7m_1dayrunmean = runmean(datenum(time_grid), datenum(oism.pco2_7m.datetime), oism.pco2_7m.pco2);
+oism.do7m_1dayrunmean = runmean(datenum(time_grid), datenum(oism.do7m.datetime), oism.do7m.do);
+oism.temp25m_1dayrunmean = runmean(datenum(time_grid), datenum(oism.temp25m.datetime), oism.temp25m.temp);
+oism.salt25m_1dayrunmean = runmean(datenum(time_grid), datenum(oism.salt25m.datetime), oism.salt25m.salt);
+oism.pco2_25m_1dayrunmean = runmean(datenum(time_grid), datenum(oism.pco2_25m.datetime), oism.pco2_25m.pco2);
+oism.do25m_1dayrunmean = runmean(datenum(time_grid), datenum(oism.do25m.datetime), oism.do25m.do);
 
 %%% Creating running mean for the OSSM data on time grid
-ossm.datetime_runmean = time_grid;
-ossm.temp1m_runmean = runmean(time_grid, runmean_time_step, ossm.temp1m.datetime, ossm.temp1m.temp);
-ossm.salt1m_runmean = runmean(time_grid, runmean_time_step, ossm.salt1m.datetime, ossm.salt1m.salt);
-ossm.pco2_1m_runmean = runmean(time_grid, runmean_time_step, ossm.pco2_1m.datetime, ossm.pco2_1m.pco2);
-ossm.temp7m_runmean = runmean(time_grid, runmean_time_step, ossm.temp7m.datetime, ossm.temp7m.temp);
-ossm.salt7m_runmean = runmean(time_grid, runmean_time_step, ossm.salt7m.datetime, ossm.salt7m.salt);
-ossm.do7m_runmean = runmean(time_grid, runmean_time_step, ossm.do7m.datetime, ossm.do7m.do);
+ossm.datetime_1dayrunmean = time_grid;
+ossm.temp1m_1dayrunmean = runmean(datenum(time_grid), datenum(ossm.temp1m.datetime), ossm.temp1m.temp);
+ossm.salt1m_1dayrunmean = runmean(datenum(time_grid), datenum(ossm.salt1m.datetime), ossm.salt1m.salt);
+ossm.pco2_1m_1dayrunmean = runmean(datenum(time_grid), datenum(ossm.pco2_1m.datetime), ossm.pco2_1m.pco2);
+ossm.temp7m_1dayrunmean = runmean(datenum(time_grid), datenum(ossm.temp7m.datetime), ossm.temp7m.temp);
+ossm.salt7m_1dayrunmean = runmean(datenum(time_grid), datenum(ossm.salt7m.datetime), ossm.salt7m.salt);
+ossm.do7m_1dayrunmean = runmean(datenum(time_grid), datenum(ossm.do7m.datetime), ossm.do7m.do);
 
-%%% Creating running mean for the OOSM data on time grid
-oosm.datetime_runmean = time_grid;
-oosm.temp1m_runmean = runmean(time_grid, runmean_time_step, oosm.temp1m.datetime, oosm.temp1m.temp);
-oosm.salt1m_runmean = runmean(time_grid, runmean_time_step, oosm.salt1m.datetime, oosm.salt1m.salt);
-oosm.pco2_1m_runmean = runmean(time_grid, runmean_time_step, oosm.pco2_1m.datetime, oosm.pco2_1m.pco2);
-oosm.temp7m_runmean = runmean(time_grid, runmean_time_step, oosm.temp7m.datetime, oosm.temp7m.temp);
-oosm.salt7m_runmean = runmean(time_grid, runmean_time_step, oosm.salt7m.datetime, oosm.salt7m.salt);
-oosm.do7m_runmean = runmean(time_grid, runmean_time_step, oosm.do7m.datetime, oosm.do7m.do);
-
-%%% Creating running mean for shelf wind data on time grid
-metero_shelf.datetime_runmean = time_grid;
-metero_shelf.wind_dir_runmean = runmean(time_grid, runmean_time_step, metero_shelf.datetime, metero_shelf.wind_dir);
-metero_shelf.wind_spd_runmean = runmean(time_grid, runmean_time_step, metero_shelf.datetime, metero_shelf.wind_spd);
-
-%%% Creating running mean for offshore wind data on time grid
-metero_offshore.datetime_runmean = time_grid;
-metero_offshore.wind_dir_runmean = runmean(time_grid, runmean_time_step, metero_offshore.datetime, metero_offshore.wind_dir);
-metero_offshore.wind_spd_runmean = runmean(time_grid, runmean_time_step, metero_offshore.datetime, metero_offshore.wind_spd);
-
-%%% Creating running mean for river discharge data on time grid
-riverflow.datetime_runmean = time_grid;
-riverflow.flow_runmean = runmean(time_grid, runmean_time_step, riverflow.datetime, riverflow.flow);
-
-
-%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%% Creating Figure %%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-figure('Renderer', 'painters', 'Position', [100 100 1000 1000])
-sgtitle('Oregon Inshore Surface Mooring - 7m')
-
-%%% Temperature Subplot
-ax1 = subplot(311);
-plot(oism.datetime_interp, oism.temp7m_interp)
-ylabel('Temperature (degC)')
-
-%%% Salinity Subplot
-ax2 = subplot(312);
-plot(oism.datetime_interp, oism.salt7m_interp);
-ylabel('Salinity (psu)')
-
-%%% pCO2 Subplot
-ax3 = subplot(313);
-plot(oism.datetime_interp, oism.pco2_7m_interp);
-ylabel('pCO_2 (microatm)')
-
-linkaxes([ax1 ax2 ax3], 'x')
-
-clear ax1 ax2 ax3
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-figure('Renderer', 'painters', 'Position', [100 100 1000 1000])
-sgtitle('Oregon Inshore Surface Mooring - 7m')
-
-%%% Temperature Subplot
-ax1 = subplot(311);
-plot(oism.datetime_interp, oism.temp7m_interp)
-ylabel('Temperature (degC)')
-xlim([datetime(2014,04,17) datetime(2022,07,01)])
-
-%%% Salinity Subplot
-ax2 = subplot(312);
-plot(oism.datetime_interp, oism.salt7m_interp);
-ylabel('Salinity (psu)')
-xlim([datetime(2014,04,17) datetime(2022,07,01)])
-
-%%% DO Subplot
-ax3 = subplot(313);
-plot(oism.datetime_interp, oism.do7m_interp);
-ylabel('Dissolved Oxygen (micromol/kg)')
-xlim([datetime(2014,04,17) datetime(2022,07,01)])
-
-linkaxes([ax1 ax2 ax3], 'x')
-
-clear ax1 ax2 ax3
