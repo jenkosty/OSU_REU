@@ -282,12 +282,14 @@ snds = zeros(size(yrs)); %%% Setting seconds to 0
 
 %%% Converting time of measurement data to datetime
 metero_shelf.datetime = datetime(yrs,mths,days,hrs,mnts,snds);
+metero_shelf.datenum = datenum(metero_shelf.datetime);
 
 %%% Removing missing data
 bad_data = find(metero_shelf.wind_spd > 90 | metero_shelf.wind_dir > 900);
 metero_shelf.wind_dir(bad_data) = [];
 metero_shelf.wind_spd(bad_data) = [];
 metero_shelf.datetime(bad_data) = [];
+metero_shelf.datenum(bad_data) = [];
 
 clear yrs mths days hrs mnts snds metero_unfmt bad_data
 
@@ -331,12 +333,14 @@ snds = zeros(size(yrs)); %%% Setting seconds to 0
 
 %%% Converting time of measurement data to datetime
 metero_offshore.datetime = datetime(yrs,mths,days,hrs,mnts, snds);
+metero_offshore.datenum = datenum(metero_offshore.datetime);
 
 %%% Removing missing data
 bad_data = find(metero_offshore.wind_spd > 90 | metero_offshore.wind_dir > 900);
 metero_offshore.wind_dir(bad_data) = [];
 metero_offshore.wind_spd(bad_data) = [];
 metero_offshore.datetime(bad_data) = [];
+metero_offshore.datenum(bad_data) = [];
 
 clear yrs mths days hrs mnts snds metero_unfmt bad_data
 
@@ -356,6 +360,7 @@ riverflow.flow = riverflow_unfmt{:,3}*2.52*(.3048)^3;
 
 %%% Extrating time of measurement data
 riverflow.datetime = datetime(riverflow_unfmt{:,2}, 'InputFormat', 'MM-dd-yyyy HH:mm');
+riverflow.datenum = datenum(riverflow.datetime);
 
 clear riverflow_unfmt
 
@@ -370,6 +375,7 @@ load('HFhightide.mat')
 
 %%% Formatting in a structure
 yaquina_HT.datetime = tm;
+yaquina_HT.datenum = datenum(yaquina_HT.datetime);
 yaquina_HT.temp = T;
 yaquina_HT.temp_std = Tsd;
 yaquina_HT.salt = S;
@@ -382,6 +388,7 @@ load('HFsurface.mat')
 
 %%% Formatting in a structure
 yaquina_all.datetime = tm;
+yaquina_all.datenum = datenum(yaquina_all.datetime);
 yaquina_all.temp = T;
 yaquina_all.salt = S;
 yaquina_all.cond = C;
@@ -401,18 +408,26 @@ tides2021 = readtable('MSL_2021_HL.csv');
 tides2022 = readtable('MSL_2022_HL.csv');
 
 %%% Combining Tide Data into 1 table
-tides = [tides2020; tides2021; tides2022];
+tides_unfmt = [tides2020; tides2021; tides2022];
 clear tides2020 tides2021 tides2022
 
 %%% Converting tide data to meters
-tides.MSL = str2double(tides.Verified_ft_) / 3.281;
+tides_unfmt.MSL = str2double(tides_unfmt.Verified_ft_) / 3.281;
 
 %%% Converting time data to datetime
-times_string = string(tides.Date) + ' ' + string(tides.Time_GMT_) + ':00';
-tides.datetime = datetime(times_string, 'InputFormat', 'yyyy/MM/dd HH:mm:ss');
+times_string = string(tides_unfmt.Date) + ' ' + string(tides_unfmt.Time_GMT_) + ':00';
+tides_unfmt.datetime = datetime(times_string, 'InputFormat', 'yyyy/MM/dd HH:mm:ss');
+tides_unfmt.datenum = datenum(tides_unfmt.datetime);
 clear times_string
 
+%%% Converting to structure
+tides.datetime = tides_unfmt.datetime;
+tides.datenum = tides_unfmt.datenum;
+tides.MSL = tides_unfmt.MSL;
+
 save('/Users/jenkosty/Research/OSU_REU/Processed_Data/HLTides', 'tides')
+
+clear tides_unfmt
 
 %%% Importing Yearly Tide Data
 tides2020 = readtable('MSL_2020_Hourly.csv');
@@ -420,18 +435,26 @@ tides2021 = readtable('MSL_2021_Hourly.csv');
 tides2022 = readtable('MSL_2022_Hourly.csv');
 
 %%% Combining Tide Data into 1 table
-tides = [tides2020; tides2021; tides2022];
+tides_unfmt = [tides2020; tides2021; tides2022];
 clear tides2020 tides2021 tides2022
 
 %%% Converting tide data to meters
-tides.MSL = tides.Verified_ft_ / 3.281;
+tides_unfmt.MSL = tides_unfmt.Verified_ft_ ./ 3.281;
 
 %%% Converting time data to datetime
-times_string = string(tides.Date) + ' ' + string(tides.Time_GMT_) + ':00';
-tides.datetime = datetime(times_string, 'InputFormat', 'yyyy/MM/dd HH:mm:ss');
+times_string = string(tides_unfmt.Date) + ' ' + string(tides_unfmt.Time_GMT_) + ':00';
+tides_unfmt.datetime = datetime(times_string, 'InputFormat', 'yyyy/MM/dd HH:mm:ss');
+tides_unfmt.datenum = datenum(tides_unfmt.datetime);
 clear times_string
 
+%%% Converting to structure
+tides.datetime = tides_unfmt.datetime;
+tides.datenum = tides_unfmt.datenum;
+tides.MSL = tides_unfmt.MSL;
+
 save('/Users/jenkosty/Research/OSU_REU/Processed_Data/HourlyTides', 'tides')
+
+clear tides_unfmt
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
