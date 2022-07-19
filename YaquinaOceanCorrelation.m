@@ -2,6 +2,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%% Loading Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%% Clearing Workspace
+clear
+
 %%% Loading Hatfield Time Series
 load('YaquinaTS.mat');
 
@@ -13,47 +16,34 @@ load('OOI_CE_OISM.mat');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% Finding the first and last days of the Hatfield time series
-firstday = min(yaquina_all.datenum);
-lastday = max(yaquina_all.datenum);
+first_day = min(yaquina_all.datenum);
+last_day = max(yaquina_all.datenum);
 
 %%% Creating a daily time grid for the Hatfield data
-dailytimegrid = floor(firstday):1:ceil(lastday);
+dailytimegrid = floor(first_day):1:ceil(last_day);
 
-clear firstday lastday
+clear first_day last_day
 
 %%% Finding the max daily salinity
 for i = length(dailytimegrid)-1:-1:1
-    [maxdailysalinity(i).salt, idx] = max(yaquina_all.salt(yaquina_all.datenum > dailytimegrid(i) & yaquina_all.datenum < dailytimegrid(i+1)));
-    dailydatetimes = yaquina_all.datenum(yaquina_all.datenum > dailytimegrid(i) & yaquina_all.datenum < dailytimegrid(i+1));
-    maxdailysalinity(i).datenum = dailydatetimes(idx);
+    
+    %%% Daily indices
+    idx = yaquina_all.datenum > dailytimegrid(i) & yaquina_all.datenum < dailytimegrid(i+1);
+    
+    %%% Finding max daily salinity
+    [hatfield_HT.salt(i), idy] = max(yaquina_all.salt(idx));
+    
+    %%% Finding associated temperature
+    temp_idx = yaquina_all.temp(idx);
+    hatfield_HT.temp(i) = temp_idx(idy);
+    
+    %%% Finding associated time
+    times_idx = yaquina_all.datenum(idx);
+    hatfield_HT.datenum(i) = times_idx(idy);
+    hatfield_HT.datetime(i) = datetime(hatfield_HT.datenum(i), 'ConvertFrom', 'datenum');
 end
 
-clear dailydatetimes idx i
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%% Calculating High Tide Hatfield Temp/Salt %%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-for i = 1:length(maxdailysalinity)
-    
-    %%% Extracting indices of measurements taken within 1 hour of highest
-    %%% daily salinity
-    idx = yaquina_all.datenum > maxdailysalinity(i).datenum-1 & yaquina_all.datenum < maxdailysalinity(i).datenum+1;
-    
-    %%% Calculating average salinity
-    hatfieldHT.salt(i) = mean(yaquina_all.salt(idx), 'omitnan');
-    
-    %%% Calculating average temperature
-    hatfieldHT.temp(i) = mean(yaquina_all.temp(idx), 'omitnan');
-    
-    %%% Extracting time of highest daily salinity
-    hatfieldHT.datenum(i) = maxdailysalinity(i).datenum;
-end
-
-%%% Formatting as datetime
-hatfieldHT.datetime = datetime(hatfieldHT.datenum, 'ConvertFrom', 'datenum');
-
-clear idx i
+clear dailydatetimes idx idy i temp_idx times_idx
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%% Interpolating Hatfield High Tide Data %%%%%%%%%%%%%%%%%%%%%
@@ -61,16 +51,21 @@ clear idx i
 
 noontimegrid = dailytimegrid+0.5;
 
-hatfieldHT.datenum_interp = noontimegrid;
-hatfieldHT.datetime_interp = datetime(hatfieldHT.datenum_interp, 'ConvertFrom', 'datenum');
-hatfieldHT.salt_interp = interp1(hatfieldHT.datenum, hatfieldHT.salt, hatfieldHT.datenum_interp); 
-hatfieldHT.temp_interp = interp1(hatfieldHT.datenum, hatfieldHT.temp, hatfieldHT.datenum_interp); 
+hatfield_HT.datenum_interp = noontimegrid;
+hatfield_HT.datetime_interp = datetime(hatfield_HT.datenum_interp, 'ConvertFrom', 'datenum');
+
+%%% Interpolating salinity data
+hatfield_HT.salt_interp = interp1(hatfield_HT.datenum, hatfield_HT.salt, hatfield_HT.datenum_interp); 
+
+%%% Interpolating temperature data
+hatfield_HT.temp_interp = interp1(hatfield_HT.datenum, hatfield_HT.temp, hatfield_HT.datenum_interp); 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%% Calculating a Running Mean of OISM Data on Time Grid %%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-oism.datetime_1dayrunmean = noontimegrid;
+oism.datenum_1dayrunmean = noontimegrid;
+oism.datetime_1dayrunmean = datetime(noontimegrid, 'ConvertFrom', 'datenum');
 
 %%% 1m runmean for salinity and temperature
 oism.salt1m_1dayrunmean = runmean(noontimegrid, datenum(oism.salt1m.datetime), oism.salt1m.salt);
@@ -83,3 +78,206 @@ oism.temp7m_1dayrunmean = runmean(noontimegrid, datenum(oism.temp7m.datetime), o
 %%% Averaging 1m and 7m runmeans for salinity and temperature
 oism.avgsalt_1dayrunmean = mean([oism.salt1m_1dayrunmean; oism.salt7m_1dayrunmean]);
 oism.avgtemp_1dayrunmean = mean([oism.temp1m_1dayrunmean; oism.temp7m_1dayrunmean]);
+
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%% Visualizing Time Series %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Hatfield Figure
+
+figure('Renderer', 'painters', 'Position', [100 100 1200 800])
+sgtitle('Hatfield Summary Figure');
+
+plot(yaquina_all.datetime, yaquina_all.salt, 'Color', [.7 .7 .7], 'DisplayName', 'Hatfield Full Resolution Salinity');
+hold on
+plot(vertcat(hatfield_HT.datetime), vertcat(hatfield_HT.salt), 'k', 'DisplayName', 'Max Daily Salinity');
+ylabel('Salinity (psu)');
+legend();
+
+%%% OISM Figure
+
+figure('Renderer', 'painters', 'Position', [100 100 1200 800])
+sgtitle('OISM Summary Figure');
+
+ax1 = subplot(311);
+plot(oism.salt1m.datetime, oism.salt1m.salt, 'Color', [.7 .7 .7], 'DisplayName','OISM Full Resolution (1m)')
+hold on
+plot(oism.datetime_1dayrunmean, oism.salt1m_1dayrunmean, 'r', 'DisplayName', 'OISM 1 Day Runmean (1m)');
+xlim([oism.datetime_1dayrunmean(1) oism.datetime_1dayrunmean(end)])
+ylabel('Salinity (psu)');
+legend();
+
+ax2 = subplot(312);
+plot(oism.salt7m.datetime, oism.salt7m.salt, 'Color', [.7 .7 .7], 'DisplayName','OISM Full Resolution (7m)')
+hold on
+plot(oism.datetime_1dayrunmean, oism.salt7m_1dayrunmean, 'b', 'DisplayName', 'OISM 1 Day Runmean (7m)');
+xlim([oism.datetime_1dayrunmean(1) oism.datetime_1dayrunmean(end)])
+ylabel('Salinity (psu)');
+legend();
+
+ax3 = subplot(313);
+plot(oism.datetime_1dayrunmean, oism.salt1m_1dayrunmean, 'r', 'DisplayName', 'OISM 1 Day Runmean (1m)');
+hold on
+plot(oism.datetime_1dayrunmean, oism.salt7m_1dayrunmean, 'b', 'DisplayName', 'OISM 1 Day Runmean (7m)');
+plot(oism.datetime_1dayrunmean, oism.avgsalt_1dayrunmean, 'k', 'DisplayName', 'OISM 1 Day Runmean (Average)');
+xlim([oism.datetime_1dayrunmean(1) oism.datetime_1dayrunmean(end)])
+ylabel('Salinity (psu)');
+legend()
+
+linkaxes([ax1 ax2 ax3], 'x');
+
+%%% OISM / Hatfield Figure
+
+figure('Renderer', 'painters', 'Position', [100 100 1200 800])
+sgtitle('Hatfield and OISM Correlation Summary Figure')
+
+ax1 = subplot(211);
+plot(hatfield_HT.datetime_interp, hatfield_HT.salt_interp, 'Color', [0 0.4470 0.7410], 'DisplayName', 'Hatfield High Tide')
+hold on
+plot(oism.datetime_1dayrunmean,oism.avgsalt_1dayrunmean, 'Color', [0.9290 0.6940 0.1250], 'DisplayName', 'OISM 1m/7m Average')
+ylabel('Salinity (psu)');
+legend()
+
+ax2 = subplot(212);
+plot(hatfield_HT.datetime_interp, hatfield_HT.temp_interp, 'Color', [0 0.4470 0.7410], 'DisplayName', 'Hatfield High Tide')
+hold on
+plot(oism.datetime_1dayrunmean,oism.avgtemp_1dayrunmean, 'Color', [0.9290 0.6940 0.1250], 'DisplayName', 'OISM 1m/7m Average')
+ylabel('Temperature (degC)');
+legend()
+
+linkaxes([ax1 ax2], 'x')
+
+clear ax1 ax2 ax3
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%% Conducting Lagged Correlation Analysis %%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+dry_start = datetime(2021,05,01);
+dry_end = datetime(2021,11,01);
+dt = 1;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Full Time Series
+
+%%%%%%%%%%%%%%%%
+%%% Salinity %%%
+%%%%%%%%%%%%%%%%
+
+%%% Calculating covariance
+[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.avgsalt_1dayrunmean, hatfield_HT.salt_interp, 10);
+
+%%% Getting Pearson Correlation Coefficient from covariance
+pearson_corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
+
+%%% Identifying max correlation coefficient
+[M,I] = max(pearson_corr_coeff);
+disp('   ');
+disp('Highest Salinity Correlation Coefficient: ' + string(M));
+
+%%% Calculating the corresponding time lag
+disp('Corresponding Time Lag: ' + string(k(I)*dt) + ' Day(s)');
+
+clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
+
+%%%%%%%%%%%%%%%%%%%
+%%% Temperature %%%
+%%%%%%%%%%%%%%%%%%%
+
+%%% Calculating covariance
+[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.avgtemp_1dayrunmean, hatfield_HT.temp_interp, 10);
+
+%%% Getting Pearson Correlation Coefficient from covariance
+pearson_corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
+
+%%% Identifying max correlation coefficient
+[M,I] = max(pearson_corr_coeff);
+disp('Highest Temperature Correlation Coefficient: ' + string(M));
+
+%%% Calculating the corresponding time lag
+disp('Corresponding Time Lag: ' + string(k(I)*dt) + ' Day(s)');
+
+clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Dry Season
+
+%%%%%%%%%%%%%%%%
+%%% Salinity %%%
+%%%%%%%%%%%%%%%%
+
+%%% Calculating covariance
+[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.avgsalt_1dayrunmean(oism.datetime_1dayrunmean > dry_start & oism.datetime_1dayrunmean < dry_end), hatfield_HT.salt_interp(hatfield_HT.datetime_interp > dry_start & hatfield_HT.datetime_interp < dry_end), 10);
+
+%%% Getting Pearson Correlation Coefficient from covariance
+pearson_corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
+
+%%% Identifying max correlation coefficient
+[M,I] = max(pearson_corr_coeff);
+disp('Highest Dry Season Salinity Correlation Coefficient: ' + string(M));
+
+%%% Calculating the corresponding time lag
+disp('Corresponding Time Lag: ' + string(k(I)*dt) + ' Day(s)');
+
+clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
+
+%%%%%%%%%%%%%%%%%%%
+%%% Temperature %%%
+%%%%%%%%%%%%%%%%%%%
+
+%%% Calculating covariance
+[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.avgtemp_1dayrunmean(oism.datetime_1dayrunmean > dry_start & oism.datetime_1dayrunmean < dry_end), hatfield_HT.temp_interp(hatfield_HT.datetime_interp > dry_start & hatfield_HT.datetime_interp < dry_end), 10);
+
+%%% Getting Pearson Correlation Coefficient from covariance
+pearson_corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
+
+%%% Identifying max correlation coefficient
+[M,I] = max(pearson_corr_coeff);
+disp('Highest Dry Season Temperature Correlation Coefficient: ' + string(M));
+
+%%% Calculating the corresponding time lag
+disp('Corresponding Time Lag: ' + string(k(I)*dt) + ' Day(s)');
+
+clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Wet Season
+
+%%%%%%%%%%%%%%%%
+%%% Salinity %%%
+%%%%%%%%%%%%%%%%
+
+%%% Calculating covariance
+[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.avgsalt_1dayrunmean(oism.datetime_1dayrunmean < dry_start | oism.datetime_1dayrunmean > dry_end), hatfield_HT.salt_interp(hatfield_HT.datetime_interp < dry_start | hatfield_HT.datetime_interp > dry_end), 10);
+
+%%% Getting Pearson Correlation Coefficient from covariance
+pearson_corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
+
+%%% Identifying max correlation coefficient
+[M,I] = max(pearson_corr_coeff);
+disp('Highest Wet Season Salinity Correlation Coefficient: ' + string(M));
+
+%%% Calculating the corresponding time lag
+disp('Corresponding Time Lag: ' + string(k(I)*dt) + ' Day(s)');
+
+clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
+
+%%%%%%%%%%%%%%%%%%%
+%%% Temperature %%%
+%%%%%%%%%%%%%%%%%%%
+
+%%% Calculating covariance
+[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.avgtemp_1dayrunmean(oism.datetime_1dayrunmean < dry_start | oism.datetime_1dayrunmean > dry_end), hatfield_HT.temp_interp(hatfield_HT.datetime_interp < dry_start | hatfield_HT.datetime_interp > dry_end), 10);
+
+%%% Getting Pearson Correlation Coefficient from covariance
+pearson_corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
+
+%%% Identifying max correlation coefficient
+[M,I] = max(pearson_corr_coeff);
+disp('Highest Wet Season Temperature Correlation Coefficient: ' + string(M));
+
+%%% Calculating the corresponding time lag
+disp('Corresponding Time Lag: ' + string(k(I)*dt) + ' Day(s)');
+
+clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
