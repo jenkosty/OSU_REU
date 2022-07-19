@@ -166,39 +166,90 @@ dt = 1;
 %%%%%%%%%%%%%%%%
 
 %%% Calculating covariance
-[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.avgsalt_1dayrunmean, hatfield_HT.salt_interp, 10);
+[Rxy,~,s2x,~,s2y,k,~] = xcovar(oism.avgsalt_1dayrunmean, hatfield_HT.salt_interp, 10);
 
 %%% Getting Pearson Correlation Coefficient from covariance
-pearson_corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
+corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
 
 %%% Identifying max correlation coefficient
-[M,I] = max(pearson_corr_coeff);
+[M,I] = max(corr_coeff);
 disp('   ');
 disp('Highest Salinity Correlation Coefficient: ' + string(M));
 
 %%% Calculating the corresponding time lag
 disp('Corresponding Time Lag: ' + string(k(I)*dt) + ' Day(s)');
 
-clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
+%%% Creating variables for parabolic fitting
+idy = I-2:1:I+2;
+corr_coeff_4_fitting = corr_coeff(idy);
+time_lag_4_fitting = k(idy)*dt;
+
+%%% Fitting parabola
+p = polyfit(time_lag_4_fitting, corr_coeff_4_fitting, 2);
+
+%%% Finding max
+fitted_time_lag = roots(polyder(p));
+
+disp('Fitted Time Lag: ' + string(fitted_time_lag) + ' Days(s)');
+
+%%% Visualizing parabolic fitting
+f = polyval(p, k(I)-2:0.1:k(I)+2);
+figure()
+plot(k, corr_coeff)
+hold on
+plot(k(I)-2:0.1:k(I)+2, f);
+xline(fitted_time_lag)
+hold off
+xlabel('Time Lag')
+ylabel('Correlation Coefficient')
+title('Salinity')
+
+clear Rxy mux s2x muy s2y k Nk M I corr_coeff corr_coeff_4_fitting idy time_lag_4_fitting fitted_time_lag f
 
 %%%%%%%%%%%%%%%%%%%
 %%% Temperature %%%
 %%%%%%%%%%%%%%%%%%%
 
 %%% Calculating covariance
-[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.avgtemp_1dayrunmean, hatfield_HT.temp_interp, 10);
+[Rxy,~,s2x,~,s2y,k,~] = xcovar(oism.avgtemp_1dayrunmean, hatfield_HT.temp_interp, 10);
 
 %%% Getting Pearson Correlation Coefficient from covariance
-pearson_corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
+corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
 
 %%% Identifying max correlation coefficient
-[M,I] = max(pearson_corr_coeff);
+[M,I] = max(corr_coeff);
+disp('   ');
 disp('Highest Temperature Correlation Coefficient: ' + string(M));
 
 %%% Calculating the corresponding time lag
 disp('Corresponding Time Lag: ' + string(k(I)*dt) + ' Day(s)');
 
-clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
+%%% Creating variables for parabolic fitting
+idy = I-2:1:I+2;
+corr_coeff_4_fitting = corr_coeff(idy);
+time_lag_4_fitting = k(idy)*dt;
+
+%%% Fitting parabola
+p = polyfit(time_lag_4_fitting, corr_coeff_4_fitting, 2);
+
+%%% Finding max
+fitted_time_lag = roots(polyder(p));
+
+disp('Fitted Time Lag: ' + string(fitted_time_lag) + ' Days(s)');
+
+%%% Visualizing parabolic fitting
+f = polyval(p, k(I)-2:0.1:k(I)+2);
+figure()
+plot(k, corr_coeff)
+hold on
+plot(k(I)-2:0.1:k(I)+2, f);
+xline(fitted_time_lag)
+hold off
+xlabel('Time Lag')
+ylabel('Correlation Coefficient')
+title('Temperature')
+
+clear Rxy mux s2x muy s2y k Nk M I corr_coeff corr_coeff_4_fitting idy time_lag_4_fitting fitted_time_lag f
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Dry Season
@@ -208,38 +259,90 @@ clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
 %%%%%%%%%%%%%%%%
 
 %%% Calculating covariance
-[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.avgsalt_1dayrunmean(oism.datetime_1dayrunmean > dry_start & oism.datetime_1dayrunmean < dry_end), hatfield_HT.salt_interp(hatfield_HT.datetime_interp > dry_start & hatfield_HT.datetime_interp < dry_end), 10);
+[Rxy,~,s2x,~,s2y,k,~] = xcovar(oism.avgsalt_1dayrunmean(oism.datetime_1dayrunmean > dry_start & oism.datetime_1dayrunmean < dry_end), hatfield_HT.salt_interp(hatfield_HT.datetime_interp > dry_start & hatfield_HT.datetime_interp < dry_end), 10);
 
 %%% Getting Pearson Correlation Coefficient from covariance
-pearson_corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
+corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
 
 %%% Identifying max correlation coefficient
-[M,I] = max(pearson_corr_coeff);
+[M,I] = max(corr_coeff);
+disp('   ');
 disp('Highest Dry Season Salinity Correlation Coefficient: ' + string(M));
 
 %%% Calculating the corresponding time lag
 disp('Corresponding Time Lag: ' + string(k(I)*dt) + ' Day(s)');
 
-clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
+%%% Creating variables for parabolic fitting
+idy = I-2:1:I+2;
+corr_coeff_4_fitting = corr_coeff(idy);
+time_lag_4_fitting = k(idy)*dt;
+
+%%% Fitting parabola
+p = polyfit(time_lag_4_fitting, corr_coeff_4_fitting, 2);
+
+%%% Finding max
+fitted_time_lag = roots(polyder(p));
+
+disp('Fitted Time Lag: ' + string(fitted_time_lag) + ' Days(s)');
+
+%%% Visualizing parabolic fitting
+f = polyval(p, k(I)-2:0.1:k(I)+2);
+figure()
+plot(k, corr_coeff)
+hold on
+plot(k(I)-2:0.1:k(I)+2, f);
+xline(fitted_time_lag)
+hold off
+xlabel('Time Lag')
+ylabel('Correlation Coefficient')
+title('Salinity - Dry Season')
+
+clear Rxy mux s2x muy s2y k Nk M I corr_coeff corr_coeff_4_fitting idy time_lag_4_fitting fitted_time_lag f
 
 %%%%%%%%%%%%%%%%%%%
 %%% Temperature %%%
 %%%%%%%%%%%%%%%%%%%
 
 %%% Calculating covariance
-[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.avgtemp_1dayrunmean(oism.datetime_1dayrunmean > dry_start & oism.datetime_1dayrunmean < dry_end), hatfield_HT.temp_interp(hatfield_HT.datetime_interp > dry_start & hatfield_HT.datetime_interp < dry_end), 10);
+[Rxy,~,s2x,~,s2y,k,~] = xcovar(oism.avgtemp_1dayrunmean(oism.datetime_1dayrunmean > dry_start & oism.datetime_1dayrunmean < dry_end), hatfield_HT.temp_interp(hatfield_HT.datetime_interp > dry_start & hatfield_HT.datetime_interp < dry_end), 10);
 
 %%% Getting Pearson Correlation Coefficient from covariance
-pearson_corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
+corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
 
 %%% Identifying max correlation coefficient
-[M,I] = max(pearson_corr_coeff);
+[M,I] = max(corr_coeff);
+disp('   ');
 disp('Highest Dry Season Temperature Correlation Coefficient: ' + string(M));
 
 %%% Calculating the corresponding time lag
 disp('Corresponding Time Lag: ' + string(k(I)*dt) + ' Day(s)');
 
-clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
+%%% Creating variables for parabolic fitting
+idy = I-2:1:I+2;
+corr_coeff_4_fitting = corr_coeff(idy);
+time_lag_4_fitting = k(idy)*dt;
+
+%%% Fitting parabola
+p = polyfit(time_lag_4_fitting, corr_coeff_4_fitting, 2);
+
+%%% Finding max
+fitted_time_lag = roots(polyder(p));
+
+disp('Fitted Time Lag: ' + string(fitted_time_lag) + ' Days(s)');
+
+%%% Visualizing parabolic fitting
+f = polyval(p, k(I)-2:0.1:k(I)+2);
+figure()
+plot(k, corr_coeff)
+hold on
+plot(k(I)-2:0.1:k(I)+2, f);
+xline(fitted_time_lag)
+hold off
+xlabel('Time Lag')
+ylabel('Correlation Coefficient')
+title('Temperature - Dry Season')
+
+clear Rxy mux s2x muy s2y k Nk M I corr_coeff corr_coeff_4_fitting idy time_lag_4_fitting fitted_time_lag f
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Wet Season
@@ -249,35 +352,87 @@ clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
 %%%%%%%%%%%%%%%%
 
 %%% Calculating covariance
-[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.avgsalt_1dayrunmean(oism.datetime_1dayrunmean < dry_start | oism.datetime_1dayrunmean > dry_end), hatfield_HT.salt_interp(hatfield_HT.datetime_interp < dry_start | hatfield_HT.datetime_interp > dry_end), 10);
+[Rxy,~,s2x,~,s2y,k,~] = xcovar(oism.avgsalt_1dayrunmean(oism.datetime_1dayrunmean < dry_start | oism.datetime_1dayrunmean > dry_end), hatfield_HT.salt_interp(hatfield_HT.datetime_interp < dry_start | hatfield_HT.datetime_interp > dry_end), 10);
 
 %%% Getting Pearson Correlation Coefficient from covariance
-pearson_corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
+corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
 
 %%% Identifying max correlation coefficient
-[M,I] = max(pearson_corr_coeff);
+[M,I] = max(corr_coeff);
+disp('   ');
 disp('Highest Wet Season Salinity Correlation Coefficient: ' + string(M));
 
 %%% Calculating the corresponding time lag
 disp('Corresponding Time Lag: ' + string(k(I)*dt) + ' Day(s)');
 
-clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
+%%% Creating variables for parabolic fitting
+idy = I-2:1:I+2;
+corr_coeff_4_fitting = corr_coeff(idy);
+time_lag_4_fitting = k(idy)*dt;
+
+%%% Fitting parabola
+p = polyfit(time_lag_4_fitting, corr_coeff_4_fitting, 2);
+
+%%% Finding max
+fitted_time_lag = roots(polyder(p));
+
+disp('Fitted Time Lag: ' + string(fitted_time_lag) + ' Days(s)');
+
+%%% Visualizing parabolic fitting
+f = polyval(p, k(I)-2:0.1:k(I)+2);
+figure()
+plot(k, corr_coeff)
+hold on
+plot(k(I)-2:0.1:k(I)+2, f);
+xline(fitted_time_lag)
+hold off
+xlabel('Time Lag')
+ylabel('Correlation Coefficient')
+title('Salinity - Wet Season')
+
+clear Rxy mux s2x muy s2y k Nk M I corr_coeff corr_coeff_4_fitting idy time_lag_4_fitting fitted_time_lag f
 
 %%%%%%%%%%%%%%%%%%%
 %%% Temperature %%%
 %%%%%%%%%%%%%%%%%%%
 
 %%% Calculating covariance
-[Rxy,mux,s2x,muy,s2y,k,Nk] = xcovar(oism.avgtemp_1dayrunmean(oism.datetime_1dayrunmean < dry_start | oism.datetime_1dayrunmean > dry_end), hatfield_HT.temp_interp(hatfield_HT.datetime_interp < dry_start | hatfield_HT.datetime_interp > dry_end), 10);
+[Rxy,~,s2x,~,s2y,k,~] = xcovar(oism.avgtemp_1dayrunmean(oism.datetime_1dayrunmean < dry_start | oism.datetime_1dayrunmean > dry_end), hatfield_HT.temp_interp(hatfield_HT.datetime_interp < dry_start | hatfield_HT.datetime_interp > dry_end), 10);
 
 %%% Getting Pearson Correlation Coefficient from covariance
-pearson_corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
+corr_coeff = Rxy./((s2x).^0.5.*(s2y).^0.5);
 
 %%% Identifying max correlation coefficient
-[M,I] = max(pearson_corr_coeff);
+[M,I] = max(corr_coeff);
+disp('   ');
 disp('Highest Wet Season Temperature Correlation Coefficient: ' + string(M));
 
 %%% Calculating the corresponding time lag
 disp('Corresponding Time Lag: ' + string(k(I)*dt) + ' Day(s)');
 
-clear Rxy mux s2x muy s2y k Nk M I pearson_corr_coeff
+%%% Creating variables for parabolic fitting
+idy = I-2:1:I+2;
+corr_coeff_4_fitting = corr_coeff(idy);
+time_lag_4_fitting = k(idy)*dt;
+
+%%% Fitting parabola
+p = polyfit(time_lag_4_fitting, corr_coeff_4_fitting, 2);
+
+%%% Finding max
+fitted_time_lag = roots(polyder(p));
+
+disp('Fitted Time Lag: ' + string(fitted_time_lag) + ' Days(s)');
+
+%%% Visualizing parabolic fitting
+f = polyval(p, k(I)-2:0.1:k(I)+2);
+figure()
+plot(k, corr_coeff)
+hold on
+plot(k(I)-2:0.1:k(I)+2, f);
+xline(fitted_time_lag)
+hold off
+xlabel('Time Lag')
+ylabel('Correlation Coefficient')
+title('Temperature - Wet Season')
+
+clear Rxy mux s2x muy s2y k Nk M I corr_coeff corr_coeff_4_fitting idy time_lag_4_fitting fitted_time_lag f
