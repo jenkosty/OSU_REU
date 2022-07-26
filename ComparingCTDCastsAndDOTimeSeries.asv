@@ -1,0 +1,41 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%% Loading Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Loading OISM data
+load('OOI_CE_OISM.mat');
+
+%%% Loading DO CTD Cast data
+load('DOcasts.mat');
+
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%% Running Mean of Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Finding the first and last days of the time series
+first_day = datenum(2022, 06, 01);
+last_day = datenum(2022, 07, 30);
+
+%%% Creating an hourly time grid
+timegrid = floor(first_day):datenum(hours(2)):ceil(last_day);
+
+%%% Calculating running mean of data
+oism.datetime_rm1hr = datetime(timegrid, 'ConvertFrom', 'datenum');
+oism.do7m_rm1hr = runmean(
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%% Plotting Time Series %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+figure()
+hold on
+a = plot();
+for i = 1:length(DOcasts_final.bottom)
+    b = plot(mean(vertcat(DOcasts_final.bottom(i).Time)), DOcasts_final.bottom(i).DissolvedOxygenMole, 'o', 'MarkerFaceColor', 'g', 'DisplayName', 'Bottom');
+    c = plot(mean(vertcat(DOcasts_final.top(i).Time)), DOcasts_final.top(i).DissolvedOxygenMole, 'o', 'MarkerFaceColor', 'r', 'DisplayName', 'Top');
+end
+xlim([datetime(2022,06,10) datetime(2022,07,30)]);
+
+legend([a b c])
