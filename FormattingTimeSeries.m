@@ -12,53 +12,77 @@ time_grid = (datetime(2014,04,01):days(1):datetime(2022,07,01))';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Loading OISM data at different depths %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Adding lat/lon data
+oism.lat = 44.6598;
+oism.lon = -124.095;
+
+%%% Loading data
 oism.temp1m = readtable('OOI_CE_OISM_SB_Temperature.csv');
 oism.salt1m = readtable('OOI_CE_OISM_SB_Salinity.csv');
+oism.pres1m = readtable('OOI_CE_OISM_SB_P.csv');
 oism.temp7m = readtable('OOI_CE_OISM_NSIF_Temperature.csv');
 oism.salt7m = readtable('OOI_CE_OISM_NSIF_Salinity.csv');
+oism.pres7m = readtable('OOI_CE_OISM_NSIF_Pressure.csv');
+oism.density7m = readtable('OOI_CE_OISM_NSIF_Density.csv');
 oism.pco2_7m = readtable('OOI_CE_OISM_NSIF_pCO2.csv');
 oism.do7m = readtable('OOI_CE_OISM_NSIF_DO.csv');
 oism.temp25m = readtable('OOI_CE_OISM_SMFN_Temperature.csv');
 oism.salt25m = readtable('OOI_CE_OISM_SMFN_Salinity.csv');
+oism.pres25m = readtable('OOI_CE_OISM_SMFN_Pressure.csv');
+oism.density25m = readtable('OOI_CE_OISM_SMFN_Density.csv');
 oism.pco2_25m = readtable('OOI_CE_OISM_SMFN_pCO2.csv');
 oism.do25m = readtable('OOI_CE_OISM_SMFN_DO.csv');
 
 %%% Filtering OISM to the highest quality control indicators
-%%% Note: DO and pCO2 data do not have quality control indicators
+%%% Note: DO and pCO2 and density data do not have quality control indicators
 oism.temp1m = oism.temp1m(oism.temp1m.sea_water_temperature_qc_agg == 1, :);
 oism.salt1m = oism.salt1m(oism.salt1m.sea_water_practical_salinity_qc_agg == 1, :);
+oism.pres1m = oism.pres1m(oism.pres1m.sea_water_pressure_qc_agg == 1, :);
 oism.temp7m = oism.temp7m(oism.temp7m.sea_water_temperature_qc_agg == 1, :);
 oism.salt7m = oism.salt7m(oism.salt7m.sea_water_practical_salinity_qc_agg == 1, :);
+oism.pres7m = oism.pres7m(oism.pres7m.sea_water_pressure_qc_agg == 1, :);
 oism.temp25m = oism.temp25m(oism.temp25m.sea_water_temperature_qc_agg == 1, :);
 oism.salt25m = oism.salt25m(oism.salt25m.sea_water_practical_salinity_qc_agg == 1, :);
+oism.pres25m = oism.pres25m(oism.pres25m.sea_water_pressure_qc_agg == 1, :);
 
 %%% Converting time strings to datetime
 oism.temp1m.datetime = datetime(vertcat(oism.temp1m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 oism.salt1m.datetime = datetime(vertcat(oism.salt1m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
+oism.pres1m.datetime = datetime(vertcat(oism.pres1m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 oism.temp7m.datetime = datetime(vertcat(oism.temp7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 oism.salt7m.datetime = datetime(vertcat(oism.salt7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
+oism.pres7m.datetime = datetime(vertcat(oism.pres7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
+oism.density7m.datetime = datetime(vertcat(oism.density7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 oism.pco2_7m.datetime = datetime(vertcat(oism.pco2_7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 oism.do7m.datetime = datetime(vertcat(oism.do7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 oism.temp25m.datetime = datetime(vertcat(oism.temp25m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 oism.salt25m.datetime = datetime(vertcat(oism.salt25m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
+oism.pres25m.datetime = datetime(vertcat(oism.pres25m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
+oism.density25m.datetime = datetime(vertcat(oism.density25m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 oism.pco2_25m.datetime = datetime(vertcat(oism.pco2_25m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 oism.do25m.datetime = datetime(vertcat(oism.do25m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 
 %%% Renaming variables
 oism.temp1m = renamevars(oism.temp1m,'sea_water_temperature','temp');
 oism.salt1m = renamevars(oism.salt1m,'sea_water_practical_salinity','salt');
+oism.pres1m = renamevars(oism.pres1m, 'sea_water_pressure', 'pres');
 oism.temp7m = renamevars(oism.temp7m,'sea_water_temperature','temp');
 oism.salt7m = renamevars(oism.salt7m,'sea_water_practical_salinity','salt');
+oism.pres7m = renamevars(oism.pres7m, 'sea_water_pressure', 'pres');
+oism.density7m = renamevars(oism.density7m, 'sea_water_density', 'density');
 oism.pco2_7m = renamevars(oism.pco2_7m,'partial_pressure_of_carbon_dioxide_in_sea_water','pco2');
 oism.do7m = renamevars(oism.do7m,'moles_of_oxygen_per_unit_mass_in_sea_water','do');
 oism.temp25m = renamevars(oism.temp25m,'sea_water_temperature','temp');
 oism.salt25m = renamevars(oism.salt25m,'sea_water_practical_salinity','salt');
+oism.pres25m = renamevars(oism.pres25m, 'sea_water_pressure', 'pres');
+oism.density25m = renamevars(oism.density25m, 'sea_water_density', 'density');
 oism.pco2_25m = renamevars(oism.pco2_25m,'partial_pressure_of_carbon_dioxide_in_sea_water','pco2');
 oism.do25m = renamevars(oism.do25m,'moles_of_oxygen_per_unit_mass_in_sea_water','do');
 
 %%% Filtering pCO2 values to remove obviously bad data
-oism.pco2_7m.pco2(oism.pco2_7m.pco2 > 1500) = NaN;
-oism.pco2_25m.pco2(oism.pco2_25m.pco2 > 1500) = NaN;
+oism.pco2_7m.pco2(oism.pco2_7m.pco2 > 2500) = NaN;
+oism.pco2_25m.pco2(oism.pco2_25m.pco2 > 2500) = NaN;
 
 %%% Removing bad pCO2 data (according to OOI annotations)
 bad_data_7m = readtable('Bad_Data_OOI_CE_OISM_NSIF_pCO2.csv');
@@ -127,15 +151,22 @@ oism.do7m_qc.do(ismember(oism.do25m_qc.datetime, oism.do25m_qc.fail_biofoul_date
 clear dissolved_oxygen fail_biofoul time do25m_qc
 
 save('/Users/jenkosty/Research/OSU_REU/Processed_Data/OOI_CE_OISM', 'oism')
-
+%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Loading OSSM data at different depths %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Adding lat/lon data
+ossm.lat = 44.6393;
+ossm.lon = -124.304;
+
+%%% Loading data
 ossm.temp1m = readtable('OOI_CE_OSSM_SB_Temperature.csv');
 ossm.salt1m = readtable('OOI_CE_OSSM_SB_Salinity.csv');
 ossm.pco2_1m = readtable('OOI_CE_OSSM_SB_pCO2.csv');
 ossm.temp7m = readtable('OOI_CE_OSSM_NSIF_Temperature.csv');
 ossm.salt7m = readtable('OOI_CE_OSSM_NSIF_Salinity.csv');
+ossm.pres7m = readtable('OOI_CE_OSSM_NSIF_P.csv');
 ossm.do7m = readtable('OOI_CE_OSSM_NSIF_DO.csv');
 
 %%% Filtering OSSM to the highest quality control indicators
@@ -144,6 +175,7 @@ ossm.temp1m = ossm.temp1m(ossm.temp1m.sea_surface_temperature_qc_agg == 1, :);
 ossm.salt1m = ossm.salt1m(ossm.salt1m.sea_water_practical_salinity_qc_agg == 1, :);
 ossm.temp7m = ossm.temp7m(ossm.temp7m.sea_water_temperature_qc_agg == 1, :);
 ossm.salt7m = ossm.salt7m(ossm.salt7m.sea_water_practical_salinity_qc_agg == 1, :);
+ossm.pres7m = ossm.pres7m(ossm.pres7m.sea_water_pressure_qc_agg == 1, :);
 
 %%% Converting time strings to datetime
 ossm.temp1m.datetime = datetime(vertcat(ossm.temp1m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
@@ -151,6 +183,7 @@ ossm.salt1m.datetime = datetime(vertcat(ossm.salt1m.time), 'InputFormat', 'yyyy-
 ossm.pco2_1m.datetime = datetime(vertcat(ossm.pco2_1m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 ossm.temp7m.datetime = datetime(vertcat(ossm.temp7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 ossm.salt7m.datetime = datetime(vertcat(ossm.salt7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
+ossm.pres7m.datetime = datetime(vertcat(ossm.pres7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 ossm.do7m.datetime = datetime(vertcat(ossm.do7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 
 %%% Renaming variables
@@ -159,10 +192,11 @@ ossm.salt1m = renamevars(ossm.salt1m,'sea_water_practical_salinity','salt');
 ossm.pco2_1m = renamevars(ossm.pco2_1m,'surface_partial_pressure_of_carbon_dioxide_in_sea_water','pco2');
 ossm.temp7m = renamevars(ossm.temp7m,'sea_water_temperature','temp');
 ossm.salt7m = renamevars(ossm.salt7m,'sea_water_practical_salinity','salt');
+ossm.pres7m = renamevars(ossm.pres7m,'sea_water_pressure','pres');
 ossm.do7m = renamevars(ossm.do7m,'moles_of_oxygen_per_unit_mass_in_sea_water','do');
 
 %%% Filtering pCO2 values to remove obviously bad data
-ossm.pco2_1m.pco2(ossm.pco2_1m.pco2 > 1500) = NaN;
+ossm.pco2_1m.pco2(ossm.pco2_1m.pco2 > 2500) = NaN;
 
 %%% Removing bad pCO2 data (according to OOI annotations)
 bad_data_1m = readtable('Bad_Data_OOI_CE_OSSM_SB_pCO2.csv');
@@ -186,6 +220,12 @@ save('/Users/jenkosty/Research/OSU_REU/Processed_Data/OOI_CE_OSSM', 'ossm')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Loading OOSM data at different depths %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Adding lat/lon data
+oosm.lat = 44.3811;
+oosm.lon = -124.956;
+
+%%% Loading data
 oosm.temp1m = readtable('OOI_CE_OOSM_SB_Temperature.csv');
 oosm.salt1m = readtable('OOI_CE_OOSM_SB_Salinity.csv');
 oosm.pco2_1m = readtable('OOI_CE_OOSM_SB_pCO2.csv');
@@ -217,7 +257,7 @@ oosm.salt7m = renamevars(oosm.salt7m,'sea_water_practical_salinity','salt');
 oosm.do7m = renamevars(oosm.do7m,'moles_of_oxygen_per_unit_mass_in_sea_water','do');
 
 %%% Filtering pCO2 values to remove obviously bad data
-oosm.pco2_1m.pco2(oosm.pco2_1m.pco2 > 1500) = NaN;
+oosm.pco2_1m.pco2(oosm.pco2_1m.pco2 > 2500) = NaN;
 
 %%% Removing bad pCO2 data (according to OOI annotations)
 bad_data_1m = readtable('Bad_Data_OOI_CE_OOSM_SB_pCO2.csv');
@@ -245,6 +285,10 @@ save('/Users/jenkosty/Research/OSU_REU/Processed_Data/OOI_CE_OOSM', 'oosm')
 %%%%%%%%%%%%%%%%%%
 %%% Shelf Data %%%
 %%%%%%%%%%%%%%%%%%
+
+%%% Adding lat/lon data
+metero_shelf.lat = 44.639;
+metero_shelf.lon = -124.304;
 
 %%% Loading meterological data from different years
 metero_unfmt.data2016 = readtable('Shelf Wind Data/2016meterologicaldata.txt');
@@ -297,6 +341,10 @@ clear yrs mths days hrs mnts snds metero_unfmt bad_data
 %%% Offshore Data %%%
 %%%%%%%%%%%%%%%%%%%%%
 
+%%% Adding lat/lon data
+metero_offshore.lat = 44.669;
+metero_offshore.lon = -124.546;
+
 %%% Loading meterological data from different years
 metero_unfmt.data2016 = readtable('Offshore Wind Data/2016meterologicaldata.txt');
 metero_unfmt.data2017 = readtable('Offshore Wind Data/2017meterologicaldata.txt');
@@ -332,7 +380,7 @@ mnts = table2array(vertcat(metero_unfmt.data2016(:,5),metero_unfmt.data2017(:,5)
 snds = zeros(size(yrs)); %%% Setting seconds to 0
 
 %%% Converting time of measurement data to datetime
-metero_offshore.datetime = datetime(yrs,mths,days,hrs,mnts, snds);
+metero_offshore.datetime = datetime(yrs,mths,days,hrs,mnts,snds);
 metero_offshore.datenum = datenum(metero_offshore.datetime);
 
 %%% Removing missing data
@@ -362,6 +410,10 @@ riverflow.flow = riverflow_unfmt{:,3}*2.52*(.3048)^3;
 riverflow.datetime = datetime(riverflow_unfmt{:,2}, 'InputFormat', 'MM-dd-yyyy HH:mm');
 riverflow.datenum = datenum(riverflow.datetime);
 
+%%% Adding lat/lon data
+riverflow.lat = 44.657397;
+riverflow.lon = -123.83875;
+
 clear riverflow_unfmt
 
 save('/Users/jenkosty/Research/OSU_REU/Processed_Data/YaquinaRiverDischarge', 'riverflow');
@@ -372,6 +424,10 @@ save('/Users/jenkosty/Research/OSU_REU/Processed_Data/YaquinaRiverDischarge', 'r
 
 %%% Loading station data
 load('HFhightide.mat')
+
+%%% Adding lat/lon data
+yaquina_HT.lat =  44.624504;
+yaquina_HT.lon = -124.043125;
 
 %%% Formatting in a structure
 yaquina_HT.datetime = tm;
@@ -386,6 +442,10 @@ clear S Ssd T tm Tsd
 %%% Loading station data
 load('HFsurface.mat')
 
+%%% Adding lat/lon data
+yaquina_all.lat =  44.624504;
+yaquina_all.lon = -124.043125;
+
 %%% Formatting in a structure
 yaquina_all.datetime = tm;
 yaquina_all.datenum = datenum(yaquina_all.datetime);
@@ -397,6 +457,26 @@ yaquina_all.pres = P;
 clear S T tm C P
 
 save('/Users/jenkosty/Research/OSU_REU/Processed_Data/YaquinaTS', 'yaquina_HT', 'yaquina_all');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%% Loading and pre-processing Dock 5 data %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Loading station data
+load('DOCK5_proc01.mat')
+
+dock5.datenum = DND5;
+dock5.datetime = datetime(dock5.datenum, 'ConvertFrom', 'datenum');
+dock5.temp3ft = TD5(:,1);
+dock5.salt3ft = SD5(:,1);
+dock5.temp7ft = TD5(:,2);
+dock5.salt7ft = SD5(:,2);
+dock5.temp11ft = TD5(:,3);
+dock5.salt11ft = SD5(:,3);
+
+clear DND5 SD5 TD5
+
+save('/Users/jenkosty/Research/OSU_REU/Processed_Data/Dock5', 'dock5');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%% Loading and pre-processing tide data %%%%%%%%%%%%%%%%%%%%%%%%
