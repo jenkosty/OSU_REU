@@ -60,7 +60,7 @@ title('Summer U/V Data');
         
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%% Decomposing Wind Data into U/V Components %%%%%%%%%%%%%%%%%%
+%%%%%%%%%% Decomposing Wind Data into Primary/Secondary Components %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% Calculating x and y components of the wind speed data
@@ -78,37 +78,84 @@ dailytimegrid = floor(first_day):1:ceil(last_day);
 u_rm = runmean(dailytimegrid, metero_shelf.datenum, u)';
 v_rm = runmean(dailytimegrid, metero_shelf.datenum, v)';
 
+%%% Identifying NaNs in data
 nanIdx = isnan(u_rm) | isnan(v_rm); 
+
+%%% Getting slope of line
 a = v_rm(~nanIdx) \ u_rm(~nanIdx);
 
-p = polyfit(v_rm(~nanIdx), u_rm(~nanIdx), 1);
-f = polyval(p, v_rm);
-
+%%% Plotting data
 figure()
 hold on
 scatter(v_rm(~nanIdx), u_rm(~nanIdx));
 plot(v_rm, a.*v_rm, 'r');
-plot(v_rm, f, 'g');
+grid on
 
-
+%%% Extracting the principle wind component
 b=90; b_rad=((b*pi)./180);
 [THETA,R] = cart2pol(v_rm,a.*v_rm); %Convert to polar coordinates
 THETA=THETA+b_rad; %Add a_rad to theta
-[x,y] = pol2cart(THETA,R); %Convert back to Cartesian coordinates
+[principle_dir_x,principle_dir_y] = pol2cart(THETA,R); %Convert back to Cartesian coordinates
+
+%%% Extracting the secondary wind component
+b=90; b_rad=((b*pi)./180);
+[THETA,R] = cart2pol(principle_dir_x,principle_dir_y); %Convert to polar coordinates
+THETA=THETA+b_rad; %Add a_rad to theta
+[secondary_dir_x,secondary_dir_y] = pol2cart(THETA,R); %Convert back to Cartesian coordinates
  
- 
+%%% Plotting data
 figure()
 hold on
 scatter(u_rm(~nanIdx), v_rm(~nanIdx));
-plot(x, y, 'r');
+plot(principle_dir_x, principle_dir_y, 'r');
+plot(secondary_dir_x, secondary_dir_y, 'g');
+grid on
 
- 
-title('u/v data - daily running mean');
+%%% Decomponsing the wind data into the principle and secondary components
 
- 
+principle_winds_prelim = NaN(size(v_rm));
+principle_winds_x = NaN(size(v_rm));
+principle_winds_y = NaN(size(v_rm));
+secondary_winds_x = NaN(size(v_rm));
+secondary_winds_y = NaN(size(v_rm));
+
+for i = 1:length(v_rm)
+    
+    %%% PRINCIPLE COMPONENT 
+    %%% a dot b
+    principle_winds_prelim(i) = u_rm(i)*principle_dir_x(200) + v_rm(i)*principle_dir_y(200);
+    %%% Divide by b dot b
+    principle_winds_prelim(i) = principle_winds_prelim(i) / (principle_dir_x(200)*principle_dir_x(200) + principle_dir_y(200)*principle_dir_y(200));
+    %%% Multiply by b
+    principle_winds_x(i) = principle_winds_prelim(i) * principle_dir_x(200);
+    principle_winds_y(i) = principle_winds_prelim(i) * principle_dir_y(200);
+    
+    %%% SECONDARY COMPONENT
+    %%% a - proj(a)
+    secondary_winds_x(i) = u_rm(i) - principle_winds_x(i);
+    secondary_winds_y(i) = v_rm(i) - principle_winds_y(i); 
+end
+    
+%%
 
 
+for i = 100
+figure()
+hold on
 
+xline(0, 'k');
+yline(0, 'k');
+scatter(u_rm(i), v_rm(i), 'k', 'MarkerFaceColor', 'k');
+plot(principle_dir_x, principle_dir_y, 'r');
+plot(secondary_dir_x, secondary_dir_y, 'g');
+scatter(principle_winds_x(i), principle_winds_y(i), 'r', 'MarkerFaceColor', 'r');
+scatter(secondary_winds_x(i), secondary_winds_y(i), 'g', 'MarkerFaceColor', 'g');
+grid on
+pause
+close all
+end
+    
+    
 %%
 
 figure('Renderer', 'painters', 'Position', [100 100 1200 800])
