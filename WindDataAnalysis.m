@@ -149,25 +149,34 @@ for i = 1:length(v)
     if secondary_winds_y(i) < 0
         secondary_winds(i) = -1 * secondary_winds(i);
     end
-end
     
-%%
+end
 
+metero_shelf.u = u;
+metero_shelf.v = v;
+metero_shelf.principle_winds = principle_winds;
+metero_shelf.secondary_winds = secondary_winds;
+
+save('/Users/jenkosty/Research/OSU_REU/Processed_Data/MeterologicalData', 'metero_shelf', 'metero_offshore');
+    
+%% 
+
+%%% Visualizing Decomposition Process
 
 for i = 100
-figure()
-hold on
-
-xline(0, 'k');
-yline(0, 'k');
-scatter(u(i), v(i), 'k', 'MarkerFaceColor', 'k');
-plot(principle_dir_x, principle_dir_y, 'r');
-plot(secondary_dir_x, secondary_dir_y, 'g');
-scatter(principle_winds_x(i), principle_winds_y(i), 'r', 'MarkerFaceColor', 'r');
-scatter(secondary_winds_x(i), secondary_winds_y(i), 'g', 'MarkerFaceColor', 'g');
-grid on
-pause
-close all
+    figure()
+    hold on
+    
+    xline(0, 'k');
+    yline(0, 'k');
+    scatter(u(i), v(i), 'k', 'MarkerFaceColor', 'k');
+    plot(principle_dir_x, principle_dir_y, 'r');
+    plot(secondary_dir_x, secondary_dir_y, 'g');
+    scatter(principle_winds_x(i), principle_winds_y(i), 'r', 'MarkerFaceColor', 'r');
+    scatter(secondary_winds_x(i), secondary_winds_y(i), 'g', 'MarkerFaceColor', 'g');
+    grid on
+    pause
+    close all
 end
     
     
@@ -177,24 +186,29 @@ figure('Renderer', 'painters', 'Position', [100 100 1200 800])
 
 ax1 = subplot(411);
 hold on
-plot(metero_shelf.datetime, principle_winds, 'k')
-%plot(metero_shelf.datetime, v, 'm');
+area(metero_shelf.datetime, v, 'FaceColor', 'k', 'DisplayName', 'North-South Winds');
+%plot(metero_shelf.datetime, principle_winds, 'k', 'DisplayName', 'Principle Winds')
+yline(0, '--');
 ylim([-20 20]);
 ylabel('Wind Speed (m/s)');
 title('Principle Winds');
+legend()
+
 
 ax2 = subplot(412);
 hold on
-plot(metero_shelf.datetime, secondary_winds, 'k');
-%plot(metero_shelf.datetime, u, 'm');
+area(metero_shelf.datetime, u, 'FaceColor', 'k','DisplayName', 'East-West Winds');
+%plot(metero_shelf.datetime, secondary_winds, 'k', 'DisplayName', 'Secondary Winds');
+yline(0, '--');
 ylim([-20 20]);
 ylabel('Wind Speed (m/s)');
 title('Secondary Winds');
+legend()
 
 ax3 = subplot(413);
 plot(oism.salt1m.datetime, oism.salt1m.salt, 'r')
 ylabel('Salinity (psu)');
-title('OISM 1m Salinity');
+title('Inshore 1m Salinity');
 
 ax4 = subplot(414);
 hold on
@@ -203,6 +217,3 @@ ylabel('River Discharge (m^3/s)');
 title('Yaquina River Discharge');
 
 linkaxes([ax1 ax2 ax3 ax4], 'x');
-
-
-
