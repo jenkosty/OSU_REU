@@ -281,7 +281,7 @@ save('/Users/jenkosty/Research/OSU_REU/Processed_Data/OOI_CE_OOSM', 'oosm')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%% Loading and pre-processing meterological data %%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+%%
 %%%%%%%%%%%%%%%%%%
 %%% Shelf Data %%%
 %%%%%%%%%%%%%%%%%%
@@ -297,30 +297,42 @@ metero_unfmt.data2018 = readtable('Shelf Wind Data/2018meterologicaldata.txt');
 metero_unfmt.data2019 = readtable('Shelf Wind Data/2019meterologicaldata.txt');
 metero_unfmt.data2020 = readtable('Shelf Wind Data/2020meterologicaldata.txt');
 metero_unfmt.data2021 = readtable('Shelf Wind Data/2021meterologicaldata.txt');
+metero_unfmt.dataJan2022 = readtable('Shelf Wind Data/Jan2022meterologicaldata.txt');
+metero_unfmt.dataFeb2022 = readtable('Shelf Wind Data/Feb2022meterologicaldata.txt');
+metero_unfmt.dataMar2022 = readtable('Shelf Wind Data/Mar2022meterologicaldata.txt');
+metero_unfmt.dataApr2022 = readtable('Shelf Wind Data/Apr2022meterologicaldata.txt');
+metero_unfmt.dataMay2022 = readtable('Shelf Wind Data/May2022meterologicaldata.txt');
 
 %%% Extracting wind direction data
 metero_shelf.wind_dir = table2array(vertcat(metero_unfmt.data2016(:,6),metero_unfmt.data2017(:,6),metero_unfmt.data2018(:,6),...
-    metero_unfmt.data2019(:,6), metero_unfmt.data2020(:,6), metero_unfmt.data2021(:,6)));
+    metero_unfmt.data2019(:,6), metero_unfmt.data2020(:,6), metero_unfmt.data2021(:,6), metero_unfmt.dataJan2022(:,6),...
+    metero_unfmt.dataFeb2022(:,6),metero_unfmt.dataMar2022(:,6), metero_unfmt.dataApr2022(:,6), metero_unfmt.dataMay2022(:,6)));
 
 %%% Extracting wind speed data
 metero_shelf.wind_spd = table2array(vertcat(metero_unfmt.data2016(:,7),metero_unfmt.data2017(:,7),metero_unfmt.data2018(:,7),...
-    metero_unfmt.data2019(:,7), metero_unfmt.data2020(:,7), metero_unfmt.data2021(:,7)));
+    metero_unfmt.data2019(:,7), metero_unfmt.data2020(:,7), metero_unfmt.data2021(:,7), metero_unfmt.dataJan2022(:,7),...
+    metero_unfmt.dataFeb2022(:,7),metero_unfmt.dataMar2022(:,7), metero_unfmt.dataApr2022(:,7), metero_unfmt.dataMay2022(:,7)));
 
 %%% Extracting time of measurement data
 yrs = table2array(vertcat(metero_unfmt.data2016(:,1),metero_unfmt.data2017(:,1),metero_unfmt.data2018(:,1),...
-    metero_unfmt.data2019(:,1), metero_unfmt.data2020(:,1), metero_unfmt.data2021(:,1)));
+    metero_unfmt.data2019(:,1), metero_unfmt.data2020(:,1), metero_unfmt.data2021(:,1), metero_unfmt.dataJan2022(:,1),...
+    metero_unfmt.dataFeb2022(:,1),metero_unfmt.dataMar2022(:,1), metero_unfmt.dataApr2022(:,1), metero_unfmt.dataMay2022(:,1)));
 
 mths = table2array(vertcat(metero_unfmt.data2016(:,2),metero_unfmt.data2017(:,2),metero_unfmt.data2018(:,2),...
-    metero_unfmt.data2019(:,2), metero_unfmt.data2020(:,2), metero_unfmt.data2021(:,2)));
+    metero_unfmt.data2019(:,2), metero_unfmt.data2020(:,2), metero_unfmt.data2021(:,2), metero_unfmt.dataJan2022(:,2),...
+    metero_unfmt.dataFeb2022(:,2),metero_unfmt.dataMar2022(:,2), metero_unfmt.dataApr2022(:,2), metero_unfmt.dataMay2022(:,2)));
 
 days = table2array(vertcat(metero_unfmt.data2016(:,3),metero_unfmt.data2017(:,3),metero_unfmt.data2018(:,3),...
-    metero_unfmt.data2019(:,3), metero_unfmt.data2020(:,3), metero_unfmt.data2021(:,3)));
+    metero_unfmt.data2019(:,3), metero_unfmt.data2020(:,3), metero_unfmt.data2021(:,3), metero_unfmt.dataJan2022(:,3),...
+    metero_unfmt.dataFeb2022(:,3),metero_unfmt.dataMar2022(:,3), metero_unfmt.dataApr2022(:,3), metero_unfmt.dataMay2022(:,3)));
 
 hrs = table2array(vertcat(metero_unfmt.data2016(:,4),metero_unfmt.data2017(:,4),metero_unfmt.data2018(:,4),...
-    metero_unfmt.data2019(:,4), metero_unfmt.data2020(:,4), metero_unfmt.data2021(:,4)));
+    metero_unfmt.data2019(:,4), metero_unfmt.data2020(:,4), metero_unfmt.data2021(:,4), metero_unfmt.dataJan2022(:,4),...
+    metero_unfmt.dataFeb2022(:,4),metero_unfmt.dataMar2022(:,4), metero_unfmt.dataApr2022(:,4), metero_unfmt.dataMay2022(:,4)));
 
 mnts = table2array(vertcat(metero_unfmt.data2016(:,5),metero_unfmt.data2017(:,5),metero_unfmt.data2018(:,5),...
-    metero_unfmt.data2019(:,5), metero_unfmt.data2020(:,5), metero_unfmt.data2021(:,5)));
+    metero_unfmt.data2019(:,5), metero_unfmt.data2020(:,5), metero_unfmt.data2021(:,5), metero_unfmt.dataJan2022(:,5),...
+    metero_unfmt.dataFeb2022(:,5),metero_unfmt.dataMar2022(:,5), metero_unfmt.dataApr2022(:,5), metero_unfmt.dataMay2022(:,5)));
 
 snds = zeros(size(yrs)); %%% Setting seconds to 0
 
@@ -393,7 +405,7 @@ metero_offshore.datenum(bad_data) = [];
 clear yrs mths days hrs mnts snds metero_unfmt bad_data
 
 save('/Users/jenkosty/Research/OSU_REU/Processed_Data/MeterologicalData', 'metero_shelf', 'metero_offshore');
-
+%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%% Loading and pre-processing river discharge data %%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
