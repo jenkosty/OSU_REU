@@ -20,7 +20,7 @@ oism.lon = -124.095;
 %%% Loading data
 oism.temp1m = readtable('OOI_CE_OISM_SB_Temperature.csv');
 oism.salt1m = readtable('OOI_CE_OISM_SB_Salinity.csv');
-oism.pres1m = readtable('OOI_CE_OISM_SB_P.csv');
+oism.pres1m = readtable('OOI_CE_OISM_SB_Pressure.csv');
 oism.temp7m = readtable('OOI_CE_OISM_NSIF_Temperature.csv');
 oism.salt7m = readtable('OOI_CE_OISM_NSIF_Salinity.csv');
 oism.pres7m = readtable('OOI_CE_OISM_NSIF_Pressure.csv');
@@ -80,11 +80,26 @@ oism.density25m = renamevars(oism.density25m, 'sea_water_density', 'density');
 oism.pco2_25m = renamevars(oism.pco2_25m,'partial_pressure_of_carbon_dioxide_in_sea_water','pco2');
 oism.do25m = renamevars(oism.do25m,'moles_of_oxygen_per_unit_mass_in_sea_water','do');
 
-%%% Filtering pCO2 values to remove obviously bad data
+%%% Mannually QCing salinity data
+oism.salt25m.salt(oism.salt25m.datetime > datetime(2017, 11, 26) & oism.salt25m.datetime < datetime(2018, 1, 19)) = NaN; % in annotations
+oism.salt25m.salt(oism.salt25m.datetime > datetime(2018, 11, 27) & oism.salt25m.datetime < datetime(2019, 4, 28)) = NaN;
+oism.salt25m.salt(oism.salt25m.datetime > datetime(2019, 12, 13) & oism.salt25m.datetime < datetime(2020, 5, 30)) = NaN;
+oism.salt25m.salt(oism.salt25m.datetime > datetime(2022, 1, 23) & oism.salt25m.datetime < datetime(2022, 4, 1)) = NaN;
+
+%%% Mannually QCing temperature data
+oism.temp25m.temp(oism.temp25m.datetime > datetime(2017, 11, 26) & oism.temp25m.datetime < datetime(2018, 1, 19)) = NaN; % in annotations
+
+%%% Mannually QCing density data
+oism.density25m.density(oism.density25m.datetime > datetime(2017, 11, 26) & oism.density25m.datetime < datetime(2018, 1, 19)) = NaN; % in annotations
+
+%%% Mannually QCing pressure data
+oism.pres25m.pres(oism.pres25m.datetime > datetime(2017, 11, 26) & oism.pres25m.datetime < datetime(2018, 1, 19)) = NaN; % in annotations
+
+%%% Mannually QCing pCO2 data
 oism.pco2_7m.pco2(oism.pco2_7m.pco2 > 2500) = NaN;
 oism.pco2_25m.pco2(oism.pco2_25m.pco2 > 2500) = NaN;
 
-%%% Removing bad pCO2 data (according to OOI annotations)
+%%% Removing pCO2 data flagged in OOI annotations
 bad_data_7m = readtable('Bad_Data_OOI_CE_OISM_NSIF_pCO2.csv');
 for i = 1:height(bad_data_7m)
     oism.pco2_7m.pco2(oism.pco2_7m.datetime > bad_data_7m.StartDate(i) & oism.pco2_7m.datetime < bad_data_7m.EndDate(i)) = NaN;
@@ -97,11 +112,11 @@ end
 
 clear bad_data_7m bad_data_25m i
 
-%%% Filtering DO values to remove obviously bad data
+%%% Manually QCing DO data
 oism.do7m.do(oism.do7m.do < 0) = NaN;
 oism.do25m.do(oism.do25m.do < 0) = NaN;
 
-%%% Removing bad DO data (according to OOI annotations)
+%%% Removing DO data flagged in OOI annotations
 bad_data_7m = readtable('Bad_Data_OOI_CE_OISM_NSIF_DO.csv');
 for i = 1:height(bad_data_7m)
     oism.do7m.do(oism.do7m.datetime > bad_data_7m.StartDate(i) & oism.do7m.datetime < bad_data_7m.EndDate(i)) = NaN;
@@ -164,9 +179,11 @@ ossm.lon = -124.304;
 ossm.temp1m = readtable('OOI_CE_OSSM_SB_Temperature.csv');
 ossm.salt1m = readtable('OOI_CE_OSSM_SB_Salinity.csv');
 ossm.pco2_1m = readtable('OOI_CE_OSSM_SB_pCO2.csv');
+ossm.pco2air1m = readtable('OOI_CE_OSSM_SB_pCO2_Air.csv');
 ossm.temp7m = readtable('OOI_CE_OSSM_NSIF_Temperature.csv');
 ossm.salt7m = readtable('OOI_CE_OSSM_NSIF_Salinity.csv');
-ossm.pres7m = readtable('OOI_CE_OSSM_NSIF_P.csv');
+ossm.density7m = readtable('OOI_CE_OSSM_NSIF_Density.csv');
+ossm.pres7m = readtable('OOI_CE_OSSM_NSIF_Pressure.csv');
 ossm.do7m = readtable('OOI_CE_OSSM_NSIF_DO.csv');
 
 %%% Filtering OSSM to the highest quality control indicators
@@ -181,8 +198,10 @@ ossm.pres7m = ossm.pres7m(ossm.pres7m.sea_water_pressure_qc_agg == 1, :);
 ossm.temp1m.datetime = datetime(vertcat(ossm.temp1m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 ossm.salt1m.datetime = datetime(vertcat(ossm.salt1m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 ossm.pco2_1m.datetime = datetime(vertcat(ossm.pco2_1m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
+ossm.pco2air1m.datetime = datetime(vertcat(ossm.pco2air1m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 ossm.temp7m.datetime = datetime(vertcat(ossm.temp7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 ossm.salt7m.datetime = datetime(vertcat(ossm.salt7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
+ossm.density7m.datetime = datetime(vertcat(ossm.density7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 ossm.pres7m.datetime = datetime(vertcat(ossm.pres7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 ossm.do7m.datetime = datetime(vertcat(ossm.do7m.time), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z');
 
@@ -190,24 +209,48 @@ ossm.do7m.datetime = datetime(vertcat(ossm.do7m.time), 'InputFormat', 'yyyy-MM-d
 ossm.temp1m = renamevars(ossm.temp1m,'sea_surface_temperature','temp');
 ossm.salt1m = renamevars(ossm.salt1m,'sea_water_practical_salinity','salt');
 ossm.pco2_1m = renamevars(ossm.pco2_1m,'surface_partial_pressure_of_carbon_dioxide_in_sea_water','pco2');
+ossm.pco2air1m = renamevars(ossm.pco2air1m,'surface_partial_pressure_of_carbon_dioxide_in_air','pco2air');
 ossm.temp7m = renamevars(ossm.temp7m,'sea_water_temperature','temp');
 ossm.salt7m = renamevars(ossm.salt7m,'sea_water_practical_salinity','salt');
+ossm.density7m = renamevars(ossm.density7m,'sea_water_density','density');
 ossm.pres7m = renamevars(ossm.pres7m,'sea_water_pressure','pres');
 ossm.do7m = renamevars(ossm.do7m,'moles_of_oxygen_per_unit_mass_in_sea_water','do');
 
-%%% Filtering pCO2 values to remove obviously bad data
+%%% Manually QCing salinity data
+ossm.salt1m.salt(ossm.salt1m.datetime > datetime(2022,7,23)) = NaN; % In annotations
+ossm.salt1m.salt(ossm.salt1m.datetime > datetime(2021,12,16) & ossm.salt1m.datetime < datetime(2021,12,21)) = NaN; % In annotations
+ossm.salt1m.salt(ossm.salt1m.datetime > datetime(2021,10,23) & ossm.salt1m.datetime < datetime(2021,10,26)) = NaN; % In annotations
+ossm.salt1m.salt(ossm.salt1m.datetime > datetime(2021,9,19) & ossm.salt1m.datetime < datetime(2021,9,24)) = NaN; % In annotations
+ossm.salt1m.salt(ossm.salt1m.datetime > datetime(2019,1,15) & ossm.salt1m.datetime < datetime(2019,4,20)) = NaN; % In annotations
+ossm.salt1m.salt(ossm.salt1m.datetime > datetime(2017,4,20) & ossm.salt1m.datetime < datetime(2017,10,15)) = NaN; % In annotations
+
+%%% Manually QCing temperature data
+ossm.temp1m.temp(ossm.temp1m.datetime > datetime(2022,7,23)) = NaN; % In annotations
+ossm.temp1m.temp(ossm.temp1m.datetime > datetime(2021,12,16) & ossm.temp1m.datetime < datetime(2021,12,21)) = NaN; % In annotations
+ossm.temp1m.temp(ossm.temp1m.datetime > datetime(2021,10,23) & ossm.temp1m.datetime < datetime(2021,10,26)) = NaN; % In annotations
+ossm.temp1m.temp(ossm.temp1m.datetime > datetime(2021,9,19) & ossm.temp1m.datetime < datetime(2021,9,24)) = NaN; % In annotations
+ossm.temp1m.temp(ossm.temp1m.datetime > datetime(2019,1,15) & ossm.temp1m.datetime < datetime(2019,4,20)) = NaN; % In annotations
+ossm.temp1m.temp(ossm.temp1m.datetime > datetime(2017,4,20) & ossm.temp1m.datetime < datetime(2017,10,15)) = NaN; % In annotations
+
+%%% Manually QCing pCO2 data
 ossm.pco2_1m.pco2(ossm.pco2_1m.pco2 > 2500) = NaN;
 
-%%% Removing bad pCO2 data (according to OOI annotations)
+%%% Removing pCO2 data flagged in OOI annotations
 bad_data_1m = readtable('Bad_Data_OOI_CE_OSSM_SB_pCO2.csv');
 for i = 1:height(bad_data_1m)
     ossm.pco2_1m.pco2(ossm.pco2_1m.datetime > bad_data_1m.StartDate(i) & ossm.pco2_1m.datetime < bad_data_1m.EndDate(i)) = NaN;
 end
 
-%%% Filtering DO values to remove obviously bad data
+%%% Removing atmospheric pCO2 data flagged in OOI annotations
+bad_data_1m = readtable('Bad_Data_OOI_CE_OSSM_SB_pCO2_Air.csv');
+for i = 1:height(bad_data_1m)
+    ossm.pco2air1m.pco2(ossm.pco2air1m.datetime > bad_data_1m.StartDate(i) & ossm.pco2air1m.datetime < bad_data_1m.EndDate(i)) = NaN;
+end
+
+%%% Manually QCing DO data
 ossm.do7m.do(ossm.do7m.do < 0) = NaN;
 
-%%% Removing bad DO data (according to OOI annotations)
+%%% Removing DO data flagged in OOI annotations
 bad_data_7m = readtable('Bad_Data_OOI_CE_OSSM_NSIF_DO.csv');
 for i = 1:height(bad_data_7m)
     ossm.do7m.do(ossm.do7m.datetime > bad_data_7m.StartDate(i) & ossm.do7m.datetime < bad_data_7m.EndDate(i)) = NaN;
@@ -217,6 +260,7 @@ clear bad_data_1m bad_data_7m i
 
 save('/Users/jenkosty/Research/OSU_REU/Processed_Data/OOI_CE_OSSM', 'ossm')
  
+%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Loading OOSM data at different depths %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -302,37 +346,49 @@ metero_unfmt.dataFeb2022 = readtable('Shelf Wind Data/Feb2022meterologicaldata.t
 metero_unfmt.dataMar2022 = readtable('Shelf Wind Data/Mar2022meterologicaldata.txt');
 metero_unfmt.dataApr2022 = readtable('Shelf Wind Data/Apr2022meterologicaldata.txt');
 metero_unfmt.dataMay2022 = readtable('Shelf Wind Data/May2022meterologicaldata.txt');
+metero_unfmt.dataJune2022 = readtable('Shelf Wind Data/June2022meterologicaldata.txt');
+metero_unfmt.dataJulyAug2022 = readtable('Shelf Wind Data/JulyAug2022meterologicaldata.txt');
+
+%%% Removing June data from July/Augest section
+metero_unfmt.dataJulyAug2022 = metero_unfmt.dataJulyAug2022(metero_unfmt.dataJulyAug2022.MM > 6, :);
 
 %%% Extracting wind direction data
 metero_shelf.wind_dir = table2array(vertcat(metero_unfmt.data2016(:,6),metero_unfmt.data2017(:,6),metero_unfmt.data2018(:,6),...
     metero_unfmt.data2019(:,6), metero_unfmt.data2020(:,6), metero_unfmt.data2021(:,6), metero_unfmt.dataJan2022(:,6),...
-    metero_unfmt.dataFeb2022(:,6),metero_unfmt.dataMar2022(:,6), metero_unfmt.dataApr2022(:,6), metero_unfmt.dataMay2022(:,6)));
+    metero_unfmt.dataFeb2022(:,6),metero_unfmt.dataMar2022(:,6), metero_unfmt.dataApr2022(:,6), metero_unfmt.dataMay2022(:,6),...
+    metero_unfmt.dataJune2022(:,6), metero_unfmt.dataJulyAug2022(:,6)));
 
 %%% Extracting wind speed data
 metero_shelf.wind_spd = table2array(vertcat(metero_unfmt.data2016(:,7),metero_unfmt.data2017(:,7),metero_unfmt.data2018(:,7),...
     metero_unfmt.data2019(:,7), metero_unfmt.data2020(:,7), metero_unfmt.data2021(:,7), metero_unfmt.dataJan2022(:,7),...
-    metero_unfmt.dataFeb2022(:,7),metero_unfmt.dataMar2022(:,7), metero_unfmt.dataApr2022(:,7), metero_unfmt.dataMay2022(:,7)));
+    metero_unfmt.dataFeb2022(:,7), metero_unfmt.dataMar2022(:,7), metero_unfmt.dataApr2022(:,7), metero_unfmt.dataMay2022(:,7),...
+    metero_unfmt.dataJune2022(:,7), metero_unfmt.dataJulyAug2022(:,7)));
 
 %%% Extracting time of measurement data
 yrs = table2array(vertcat(metero_unfmt.data2016(:,1),metero_unfmt.data2017(:,1),metero_unfmt.data2018(:,1),...
     metero_unfmt.data2019(:,1), metero_unfmt.data2020(:,1), metero_unfmt.data2021(:,1), metero_unfmt.dataJan2022(:,1),...
-    metero_unfmt.dataFeb2022(:,1),metero_unfmt.dataMar2022(:,1), metero_unfmt.dataApr2022(:,1), metero_unfmt.dataMay2022(:,1)));
+    metero_unfmt.dataFeb2022(:,1),metero_unfmt.dataMar2022(:,1), metero_unfmt.dataApr2022(:,1), metero_unfmt.dataMay2022(:,1),...
+    metero_unfmt.dataJune2022(:,1), metero_unfmt.dataJulyAug2022(:,1)));
 
 mths = table2array(vertcat(metero_unfmt.data2016(:,2),metero_unfmt.data2017(:,2),metero_unfmt.data2018(:,2),...
     metero_unfmt.data2019(:,2), metero_unfmt.data2020(:,2), metero_unfmt.data2021(:,2), metero_unfmt.dataJan2022(:,2),...
-    metero_unfmt.dataFeb2022(:,2),metero_unfmt.dataMar2022(:,2), metero_unfmt.dataApr2022(:,2), metero_unfmt.dataMay2022(:,2)));
+    metero_unfmt.dataFeb2022(:,2),metero_unfmt.dataMar2022(:,2), metero_unfmt.dataApr2022(:,2), metero_unfmt.dataMay2022(:,2),...
+    metero_unfmt.dataJune2022(:,2), metero_unfmt.dataJulyAug2022(:,2)));
 
 days = table2array(vertcat(metero_unfmt.data2016(:,3),metero_unfmt.data2017(:,3),metero_unfmt.data2018(:,3),...
     metero_unfmt.data2019(:,3), metero_unfmt.data2020(:,3), metero_unfmt.data2021(:,3), metero_unfmt.dataJan2022(:,3),...
-    metero_unfmt.dataFeb2022(:,3),metero_unfmt.dataMar2022(:,3), metero_unfmt.dataApr2022(:,3), metero_unfmt.dataMay2022(:,3)));
+    metero_unfmt.dataFeb2022(:,3),metero_unfmt.dataMar2022(:,3), metero_unfmt.dataApr2022(:,3), metero_unfmt.dataMay2022(:,3),...
+    metero_unfmt.dataJune2022(:,3), metero_unfmt.dataJulyAug2022(:,3)));
 
 hrs = table2array(vertcat(metero_unfmt.data2016(:,4),metero_unfmt.data2017(:,4),metero_unfmt.data2018(:,4),...
     metero_unfmt.data2019(:,4), metero_unfmt.data2020(:,4), metero_unfmt.data2021(:,4), metero_unfmt.dataJan2022(:,4),...
-    metero_unfmt.dataFeb2022(:,4),metero_unfmt.dataMar2022(:,4), metero_unfmt.dataApr2022(:,4), metero_unfmt.dataMay2022(:,4)));
+    metero_unfmt.dataFeb2022(:,4),metero_unfmt.dataMar2022(:,4), metero_unfmt.dataApr2022(:,4), metero_unfmt.dataMay2022(:,4),...
+    metero_unfmt.dataJune2022(:,4), metero_unfmt.dataJulyAug2022(:,4)));
 
 mnts = table2array(vertcat(metero_unfmt.data2016(:,5),metero_unfmt.data2017(:,5),metero_unfmt.data2018(:,5),...
     metero_unfmt.data2019(:,5), metero_unfmt.data2020(:,5), metero_unfmt.data2021(:,5), metero_unfmt.dataJan2022(:,5),...
-    metero_unfmt.dataFeb2022(:,5),metero_unfmt.dataMar2022(:,5), metero_unfmt.dataApr2022(:,5), metero_unfmt.dataMay2022(:,5)));
+    metero_unfmt.dataFeb2022(:,5),metero_unfmt.dataMar2022(:,5), metero_unfmt.dataApr2022(:,5), metero_unfmt.dataMay2022(:,5),...
+    metero_unfmt.dataJune2022(:,5), metero_unfmt.dataJulyAug2022(:,5)));
 
 snds = zeros(size(yrs)); %%% Setting seconds to 0
 
@@ -493,7 +549,7 @@ save('/Users/jenkosty/Research/OSU_REU/Processed_Data/Dock5', 'dock5');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%% Loading and pre-processing tide data %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+%%
 %%% Importing Yearly Tide Data
 tides2020 = readtable('MSL_2020_HL.csv');
 tides2021 = readtable('MSL_2021_HL.csv');
@@ -503,8 +559,11 @@ tides2022 = readtable('MSL_2022_HL.csv');
 tides_unfmt = [tides2020; tides2021; tides2022];
 clear tides2020 tides2021 tides2022
 
-%%% Converting tide data to meters
-tides_unfmt.MSL = str2double(tides_unfmt.Verified_ft_) / 3.281;
+%%% Extracting verified tide data
+tides_unfmt.MSL = tides_unfmt.Verified_m_;
+
+%%% Using predicted data if verified is not available
+%tides_unfmt.MSL(isnan(tides_unfmt.MSL)) = tides_unfmt.Predicted_m_(isnan(tides_unfmt.MSL));
 
 %%% Converting time data to datetime
 times_string = string(tides_unfmt.Date) + ' ' + string(tides_unfmt.Time_GMT_) + ':00';
@@ -521,6 +580,7 @@ save('/Users/jenkosty/Research/OSU_REU/Processed_Data/HLTides', 'tides')
 
 clear tides_unfmt
 
+%%
 %%% Importing Yearly Tide Data
 tides2020 = readtable('MSL_2020_Hourly.csv');
 tides2021 = readtable('MSL_2021_Hourly.csv');
@@ -530,8 +590,11 @@ tides2022 = readtable('MSL_2022_Hourly.csv');
 tides_unfmt = [tides2020; tides2021; tides2022];
 clear tides2020 tides2021 tides2022
 
-%%% Converting tide data to meters
-tides_unfmt.MSL = tides_unfmt.Verified_ft_ ./ 3.281;
+%%% Extracting verified tide data
+tides_unfmt.MSL = tides_unfmt.Verified_m_;
+
+%%% Using predicted data if verified is not available
+tides_unfmt.MSL(isnan(tides_unfmt.MSL)) = tides_unfmt.Predicted_m_(isnan(tides_unfmt.MSL));
 
 %%% Converting time data to datetime
 times_string = string(tides_unfmt.Date) + ' ' + string(tides_unfmt.Time_GMT_) + ':00';
